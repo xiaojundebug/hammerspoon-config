@@ -3,11 +3,11 @@
 -- **************************************************
 
 local function toChinese()
-  hs.keycodes.currentSourceID("com.apple.inputmethod.SCIM.ITABC")
+  hs.keycodes.currentSourceID('com.apple.inputmethod.SCIM.ITABC')
 end
 
 local function toEnglish()
-  hs.keycodes.currentSourceID("com.apple.keylayout.ABC")
+  hs.keycodes.currentSourceID('com.apple.keylayout.ABC')
 end
 
 -- 定义你自己想要自动切换输入法的 App
@@ -20,28 +20,28 @@ local app2Ime = {
 
 local function updateFocusedAppInputMethod(appObject)
   local ime
-  local focusAppPath = appObject:path() 
+  local focusAppPath = appObject:path()
 
   for index, app in pairs(app2Ime) do
-      local appPath = app[1]
-      local expectedIme = app[2]
+    local appPath = app[1]
+    local expectedIme = app[2]
 
-      if focusAppPath == appPath then
-          ime = expectedIme
-          break
-      end
+    if focusAppPath == appPath then
+      ime = expectedIme
+      break
+    end
   end
 
   if ime == 'English' then
-      toEnglish()
+    toEnglish()
   elseif ime == 'Chinese' then
-      toChinese()
+    toChinese()
   end
 end
 
 local function applicationWatcher(appName, eventType, appObject)
   if eventType == hs.application.watcher.activated then
-      updateFocusedAppInputMethod(appObject)
+    updateFocusedAppInputMethod(appObject)
   end
 end
 
