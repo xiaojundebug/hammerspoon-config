@@ -4,14 +4,15 @@
 
 local width = 90
 local height = 5
-local alpha = 1
+local alpha = 0.9
 local colorsConfig = {
   {
     ime = 'com.apple.inputmethod.SCIM.ITABC',
     colors = {
-      { hex = '#ef4444' },
-      { hex = '#ffffff' },
-      { hex = '#3b82f6' },
+      { hex = '#84cc16' },
+      -- 你可以使用多个颜色
+      -- { hex = '#ffffff' },
+      -- { hex = '#3b82f6' },
     }
   },
 }
@@ -23,13 +24,13 @@ local lastSourceID = ''
 function drawIcon(config)
   local colors = config.colors
   local screens = hs.screen.allScreens()
-  local cellW = width / #colors
-
+  
   for _, s in ipairs(screens) do
     local frame = s:fullFrame()
-
+    local cellW = frame.w / #colors
+    
     for i, color in ipairs(config.colors) do
-      local startX = frame.w - width + (i - 1) * cellW
+      local startX = (i - 1) * cellW
       local startY = 0
       local rect = {
         type = 'rectangle',
@@ -39,7 +40,7 @@ function drawIcon(config)
       }
 
       if not myCanvas[s] then
-        myCanvas[s] = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = frame.h })
+        myCanvas[s] = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = height })
         myCanvas[s]:level(hs.canvas.windowLevels.overlay)
         myCanvas[s]:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
         myCanvas[s]:alpha(alpha)
