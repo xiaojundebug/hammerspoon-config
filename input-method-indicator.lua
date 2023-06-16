@@ -91,7 +91,7 @@ end
 -- 注册输入法变化事件监听（该方式有时候不触发，参考 https://github.com/Hammerspoon/hammerspoon/issues/1499）
 -- hs.keycodes.inputSourceChanged(handleInputSourceChanged)
 -- 每秒同步一次，避免由于错过事件监听导致状态不同步
-timer = hs.timer.new(1, handleInputSourceChanged):start()
+indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged):start()
 
 dn = hs.distributednotifications.new(
   handleInputSourceChanged,
