@@ -4,9 +4,9 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 
 ## 脚本列表
 
-- [auto-switch-input-method.lua](auto-switch-input-method.lua) - 根据 App 切换对应输入法，妈妈再也不用担心我把「npm」 打成「你怕吗」了
-- [wifi.lua](wifi.lua) - 连接到公司 wifi 后自动静音扬声器
 - [input-method-indicator.lua](input-method-indicator.lua) - 给输入法设置一个指示器，这样应用全屏时也能一眼看到你此时的输入法是哪个了，可以取代 [ShowyEdge](https://github.com/pqrs-org/ShowyEdge/)
+- [auto-switch-input-method.lua](auto-switch-input-method.lua) - 根据 App 切换对应输入法，妈妈再也不用担心我把「npm」 打成「你怕吗」了
+- [wifi-mute.lua](wifi-mute.lua) - 连接到公司 wifi 后自动静音扬声器
 - [defeating-paste-blocking.lua](defeating-paste-blocking.lua) - 有些网站禁止粘贴，该脚本可以模拟系统输入事件绕过限制
 
 ## 怎么使用
