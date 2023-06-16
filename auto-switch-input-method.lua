@@ -16,6 +16,9 @@ local app2Ime = {
   {'/Applications/iTerm.app', 'English'},
   {'/Applications/Visual Studio Code.app', 'English'},
   {'/Applications/WebStorm.app', 'English'},
+  {'/Applications/Google Chrome.app', 'English'},
+  {'/Applications/QQ.app', 'Chinese'},
+  {'/Applications/WeChat.app', 'Chinese'},
 }
 
 local function updateFocusedAppInputMethod(appObject)
