@@ -22,7 +22,7 @@ local myCanvas = {}
 local lastSourceID = ''
 
 -- 绘制角标矩形
-function drawIcon(config)
+function drawIndicator(config)
   local colors = config.colors
   local screens = hs.screen.allScreens()
   
@@ -46,6 +46,7 @@ function drawIcon(config)
         myCanvas[s]:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
         myCanvas[s]:alpha(alpha)
       end
+
       myCanvas[s][i] = rect
     end
 
@@ -63,41 +64,43 @@ end
 
 -- 更新 Canvas 显示
 local function updateCanvas()
-  local currentSourceID = hs.keycodes.currentSourceID()
-
-  if lastSourceID == currentSourceID then
-    return
-  end
-
-  lastSourceID = currentSourceID
-
   clearCanvas()
 
   for index, config in pairs(colorsConfig) do
     local ime = config.ime
     local colors = config.config
 
-    if currentSourceID == ime then
-      drawIcon(config)
+    if hs.keycodes.currentSourceID() == ime then
+      drawIndicator(config)
       break
     end
   end
 end
 
 local function handleInputSourceChanged()
-  updateCanvas()
+  local currentSourceID = hs.keycodes.currentSourceID()
+
+  if lastSourceID ~= currentSourceID then
+    updateCanvas()
+  end
+
+  lastSourceID = currentSourceID
 end
 
 -- 注册输入法变化事件监听（该方式有时候不触发，参考 https://github.com/Hammerspoon/hammerspoon/issues/1499）
 -- hs.keycodes.inputSourceChanged(handleInputSourceChanged)
--- 每秒同步一次，避免由于错过事件监听导致状态不同步
-indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged):start()
-
 dn = hs.distributednotifications.new(
   handleInputSourceChanged,
   -- or 'AppleSelectedInputSourcesChangedNotification'
   'com.apple.Carbon.TISNotifySelectedKeyboardInputSourceChanged'
 )
-dn:start()
+-- 每秒同步一次，避免由于错过事件监听导致状态不同步
+indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged)
+screenWatcher = hs.screen.watcher.new(updateCanvas)
 
+dn:start()
+indicatorSyncTimer:start()
+screenWatcher:start()
+
+-- 初始执行一次
 updateCanvas()
