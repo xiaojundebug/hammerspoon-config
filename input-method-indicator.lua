@@ -2,9 +2,10 @@
 -- 输入法指示器
 -- **************************************************
 
-local width = 90
 local height = 5
 local alpha = 0.9
+-- 配置指示器颜色
+-- 你可以通过 `defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources | grep "Input Mode"` 命令获取当前输入法
 local colorsConfig = {
   {
     ime = 'com.apple.inputmethod.SCIM.ITABC',
