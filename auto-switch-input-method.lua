@@ -2,6 +2,8 @@
 -- 根据 App 自动切换输入法
 -- **************************************************
 
+local utils = require("./utils")
+
 local function toChinese()
   hs.keycodes.currentSourceID('com.apple.inputmethod.SCIM.ITABC')
 end
@@ -42,9 +44,11 @@ local function updateFocusedAppInputMethod(appObject)
   end
 end
 
+local debouncedUpdateFn = utils.debounce(updateFocusedAppInputMethod, 0.1)
+
 local function applicationWatcher(appName, eventType, appObject)
   if eventType == hs.application.watcher.activated then
-    updateFocusedAppInputMethod(appObject)
+    debouncedUpdateFn(appObject)
   end
 end
 
