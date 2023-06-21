@@ -8,7 +8,7 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 - [auto-switch-input-method.lua](auto-switch-input-method.lua) - 根据 App 切换对应输入法，妈妈再也不用担心我把「npm」 打成「你怕吗」了
 - [wifi-mute.lua](wifi-mute.lua) - 连接到公司 wifi 后自动静音扬声器
 - [defeating-paste-blocking.lua](defeating-paste-blocking.lua) - 有些网站禁止粘贴，该脚本可以模拟系统输入事件绕过限制
-- [auto-quit-wechat-on-sleep.lua](auto-quit-wechat-on-sleep.lua) - 电脑休眠时自动退出微信，避免手机上收不到消息
+- [auto-quit-wechat.lua](auto-quit-wechat.lua) - 电脑屏幕关闭一段时间后自动退出微信，避免手机上收不到消息
 
 ## 怎么使用
 

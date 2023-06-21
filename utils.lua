@@ -13,16 +13,16 @@ function module.setTimeout(callback, delay)
 end
 
 function module.debounce(func, delay)
-  local cancelTimeout = nil
+  local clearTimeout = nil
 
   return function(...)
     local args = {...}
 
-    if cancelTimeout ~= nil then
-      cancelTimeout()
+    if clearTimeout ~= nil then
+      clearTimeout()
     end
 
-    cancelTimeout = module.setTimeout(function()
+    clearTimeout = module.setTimeout(function()
       func(table.unpack(args))
     end, delay)
   end
