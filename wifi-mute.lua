@@ -3,7 +3,7 @@
 -- **************************************************
 
 -- 定义公司的 Wi-Fi 名称
-local companyWifi = "MUDU"
+local companyWifi = 'MUDU'
 
 -- 检测当前 Wi-Fi 的名称
 local function getCurrentWifiName()

@@ -2,7 +2,7 @@
 -- 根据 App 自动切换输入法
 -- **************************************************
 
-local utils = require("./utils")
+local utils = require('./utils')
 
 local function toChinese()
   hs.keycodes.currentSourceID('com.apple.inputmethod.SCIM.ITABC')
