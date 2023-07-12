@@ -16,7 +16,7 @@ function module.debounce(func, delay)
   local clearTimeout = nil
 
   return function(...)
-    local args = {...}
+    local args = { ... }
 
     if clearTimeout ~= nil then
       clearTimeout()

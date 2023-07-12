@@ -66,7 +66,7 @@ end
 local function updateCanvas()
   clearCanvas()
 
-  for index, config in pairs(colorsConfig) do
+  for _, config in pairs(colorsConfig) do
     local ime = config.ime
     local colors = config.config
 
