@@ -16,6 +16,8 @@ local app2Ime = {
   { '/Applications/Google Chrome.app', English },
   { '/Applications/QQ.app', Chinese },
   { '/Applications/WeChat.app', Chinese },
+  { '/Applications/企业微信.app', Chinese },
+  { '/Applications/DingTalk.app', Chinese },
 }
 
 local function updateFocusedAppInputMethod(appObject)
