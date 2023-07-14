@@ -22,14 +22,14 @@ local myCanvas = {}
 local lastSourceID = ''
 
 -- 绘制角标矩形
-function drawIndicator(config)
+local function drawIndicator(config)
   local colors = config.colors
   local screens = hs.screen.allScreens()
-  
+
   for _, s in ipairs(screens) do
     local frame = s:fullFrame()
     local cellW = frame.w / #colors
-    
+
     for i, color in ipairs(config.colors) do
       local startX = (i - 1) * cellW
       local startY = 0
@@ -55,7 +55,7 @@ function drawIndicator(config)
 end
 
 -- 清除 Canvas 上的内容
-function clearCanvas()
+local function clearCanvas()
   for _, canvas in pairs(myCanvas) do
     canvas:delete()
   end
@@ -68,7 +68,6 @@ local function updateCanvas()
 
   for _, config in pairs(colorsConfig) do
     local ime = config.ime
-    local colors = config.config
 
     if hs.keycodes.currentSourceID() == ime then
       drawIndicator(config)
