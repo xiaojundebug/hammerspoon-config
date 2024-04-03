@@ -16,7 +16,7 @@ local function unmuteVolume()
 end
 
 -- 监听 Wi-Fi 变化
-wifiWatcher = hs.wifi.watcher.new(function()
+wm_wifiWatcher = hs.wifi.watcher.new(function()
   local currentWifi = hs.wifi.currentNetwork()
   if currentWifi == companyWifi then
     muteVolume() -- 如果是公司 Wi-Fi，则静音
@@ -26,4 +26,4 @@ wifiWatcher = hs.wifi.watcher.new(function()
 end)
 
 -- 启动 Wi-Fi 监听
-wifiWatcher:start()
+wm_wifiWatcher:start()

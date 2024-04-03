@@ -42,5 +42,5 @@ local function applicationWatcher(appName, eventType, appObject)
   end
 end
 
-appWatcher = hs.application.watcher.new(applicationWatcher)
-appWatcher:start()
+asim_appWatcher = hs.application.watcher.new(applicationWatcher)
+asim_appWatcher:start()

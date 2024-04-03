@@ -5,12 +5,11 @@
 local height = 5
 local alpha = 0.9
 -- 配置指示器颜色
--- 你可以通过 `defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources | grep "Input Mode"` 命令获取当前输入法
 local colorsConfig = {
   {
-    ime = 'com.apple.inputmethod.SCIM.ITABC',
+    ime = 'com.apple.inputmethod.SCIM.ITABC', -- 系统自带简中输入法
     colors = {
-      { hex = '#84cc16' },
+      { hex = '#e11d48' },
       -- 你可以使用多个颜色
       -- { hex = '#ffffff' },
       -- { hex = '#3b82f6' },
@@ -37,7 +36,7 @@ local function drawIndicator(config)
         type = 'rectangle',
         fillColor = color,
         action = 'fill',
-        frame = { x = startX, y = startY, h = height, w = cellW }
+        frame = { x = startX, y = startY, w = cellW, h = height }
       }
 
       if not myCanvas[s] then
@@ -88,18 +87,18 @@ end
 
 -- 注册输入法变化事件监听（该方式有时候不触发，参考 https://github.com/Hammerspoon/hammerspoon/issues/1499）
 -- hs.keycodes.inputSourceChanged(handleInputSourceChanged)
-dn = hs.distributednotifications.new(
+imi_dn = hs.distributednotifications.new(
   handleInputSourceChanged,
   -- or 'AppleSelectedInputSourcesChangedNotification'
   'com.apple.Carbon.TISNotifySelectedKeyboardInputSourceChanged'
 )
 -- 每秒同步一次，避免由于错过事件监听导致状态不同步
-indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged)
-screenWatcher = hs.screen.watcher.new(updateCanvas)
+imi_indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged)
+imi_screenWatcher = hs.screen.watcher.new(updateCanvas)
 
-dn:start()
-indicatorSyncTimer:start()
-screenWatcher:start()
+imi_dn:start()
+imi_indicatorSyncTimer:start()
+imi_screenWatcher:start()
 
 -- 初始执行一次
 updateCanvas()
