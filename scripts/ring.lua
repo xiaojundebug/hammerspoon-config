@@ -17,15 +17,15 @@ local APPLICATIONS = {
 local RING_SIZE = 300
 -- 菜单圆环粗细
 local RING_THICKNESS = RING_SIZE / 3.75
+-- 图标大小
+local ICON_SIZE = RING_THICKNESS / 2
+-- 是否菜单在鼠标指针处弹出，而不是居中
+local FOLLOW_MOUSE = true
 -- 颜色配置
 local COLOR_PATTERN = {
   inactive = { red = 0.1, green = 0.1, blue = 0.15, alpha = 0.95 },
   active = { hex = '#565584' }
 }
--- 图标大小
-local ICON_SIZE = RING_THICKNESS / 2
--- 是否菜单在鼠标指针处弹出，而不是居中
-local FOLLOW_MOUSE = true
 
 -- ---------- 菜单封装 ----------
 
@@ -117,12 +117,12 @@ end
 
 -- 显示菜单
 function Menu:show()
-  self.canvas:show(0.1)
+  self.canvas:show()
 end
 
 -- 隐藏菜单
 function Menu:hide()
-  self.canvas:hide(0.1)
+  self.canvas:hide()
 end
 
 -- 返回菜单是否显示
