@@ -2,6 +2,8 @@
 -- 环形 app 启动器
 -- **************************************************
 
+local utils = require('./utils')
+
 -- ---------- 自定义配置 ----------
 
 -- 菜单项配置
@@ -14,7 +16,7 @@ local APPLICATIONS = {
   { name = 'WebStorm', icon = '/Applications/WebStorm.app/Contents/Resources/webstorm.icns' },
 }
 -- 菜单圆环大小
-local RING_SIZE = 300
+local RING_SIZE = 280
 -- 菜单圆环粗细
 local RING_THICKNESS = RING_SIZE / 3.75
 -- 图标大小
@@ -37,30 +39,28 @@ function Menu:new(config)
   setmetatable(o, self)
   self.__index = self
 
-  self.menus = config.menus
-  self.ringSize = config.ringSize or 360
-  self.ringThickness = config.ringThickness or 96
-  self.iconSize = config.iconSize or self.ringThickness / 2
-  self.canvas = nil
-  self.active = nil
-  self.inactiveColor = config.inactiveColor or { hex = '#333333' }
-  self.activeColor = config.activeColor or { hex = '#3b82f6' }
+  self._menus = config.menus
+  self._ringSize = config.ringSize or 360
+  self._ringThickness = config.ringThickness or self._ringSize / 3.75
+  self._iconSize = config.iconSize or self._ringThickness / 2
+  self._canvas = nil
+  self._active = nil
+  self._inactiveColor = config.inactiveColor or { hex = '#333333' }
+  self._activeColor = config.activeColor or { hex = '#3b82f6' }
 
-  local screenFrame = hs.screen.primaryScreen():fullFrame()
-  local halfScreenW = screenFrame.w / 2
-  local halfScreenH = screenFrame.h / 2
-  local halfRingSize = self.ringSize / 2
-  local halfRingThickness = self.ringThickness / 2
-  local pieceDeg = 360 / #self.menus
+  local halfRingSize = self._ringSize / 2
+  local halfRingThickness = self._ringThickness / 2
+  local pieceDeg = 360 / #self._menus
   local halfPieceDeg = pieceDeg / 2
-  local halfIconSize = self.iconSize / 2
+  local halfIconSize = self._iconSize / 2
 
-  self.canvas = hs.canvas.new({
-    x = screenFrame.x + halfScreenW - halfRingSize,
-    y = screenFrame.y + halfScreenH - halfRingSize,
-    w = self.ringSize,
-    h = self.ringSize
+  self._canvas = hs.canvas.new({
+    x = config.left or 0,
+    y = config.top or 0,
+    w = self._ringSize,
+    h = self._ringSize
   })
+  self._canvas:level(hs.canvas.windowLevels.overlay)
 
   -- 渲染圆环
   local ring = {
@@ -70,12 +70,12 @@ function Menu:new(config)
     radius = halfRingSize - halfRingThickness,
     startAngle = 0,
     endAngle = 360,
-    strokeWidth = self.ringThickness,
-    strokeColor = self.inactiveColor,
-    arcRadii = false,
+    strokeWidth = self._ringThickness,
+    strokeColor = self._inactiveColor,
+    arcRadii = false
   }
   
-  self.canvas[1] = ring
+  self._canvas[1] = ring
 
   -- 渲染激活项高亮背景
   local indicator = {
@@ -85,17 +85,16 @@ function Menu:new(config)
     radius = halfRingSize - halfRingThickness,
     startAngle = -halfPieceDeg,
     endAngle = halfPieceDeg,
-    strokeWidth = self.ringThickness - 6,
-    strokeColor = self.activeColor,
-    arcRadii = false,
-    -- strokeCapStyle = 'round',
+    strokeWidth = self._ringThickness - 6,
+    strokeColor = self._activeColor,
+    arcRadii = false
   }
   indicator.strokeColor.alpha = 0
 
-  self.canvas[2] = indicator
+  self._canvas[2] = indicator
 
   -- 渲染 icon
-  for key, app in pairs(self.menus) do
+  for key, app in pairs(self._menus) do
     local image = hs.image.imageFromPath(app.icon)
     local rad = math.rad(pieceDeg * (key - 1) - 90)
 
@@ -103,67 +102,68 @@ function Menu:new(config)
     local x = length * math.cos(rad) + halfRingSize - halfIconSize
     local y = length * math.sin(rad) + halfRingSize - halfIconSize
 
-    self.canvas[key + 2] = {
+    self._canvas[key + 2] = {
       type = "image",
       image = image,
-      frame = { x = x , y = y, h = self.iconSize, w = self.iconSize }
+      frame = { x = x , y = y, h = self._iconSize, w = self._iconSize }
     }
   end
-
-  self.canvas:level(hs.canvas.windowLevels.overlay)
 
   return o
 end
 
 -- 显示菜单
 function Menu:show()
-  self.canvas:show()
+  self._canvas:show()
 end
 
 -- 隐藏菜单
 function Menu:hide()
-  self.canvas:hide()
+  self._canvas:hide()
 end
 
 -- 返回菜单是否显示
 function Menu:isShowing()
-  return self.canvas:isShowing()
+  return self._canvas:isShowing()
 end
 
 -- 设置菜单激活项
 function Menu:setActive(index)
-  if self.active ~= index then
-    self.active = index
+  if self._active ~= index then
+    self._active = index
 
-    local pieceDeg = 360 / #self.menus
+    local pieceDeg = 360 / #self._menus
     local halfPieceDeg = pieceDeg / 2
 
     if (index) then
-      self.canvas[2].startAngle = pieceDeg * (index - 1) - halfPieceDeg
-      self.canvas[2].endAngle = pieceDeg * index - halfPieceDeg
-      self.canvas[2].strokeColor.alpha = 1
+      self._canvas[2].startAngle = pieceDeg * (index - 1) - halfPieceDeg
+      self._canvas[2].endAngle = pieceDeg * index - halfPieceDeg
+      self._canvas[2].strokeColor.alpha = 1
     else
-      self.canvas[2].strokeColor.alpha = 0
+      self._canvas[2].strokeColor.alpha = 0
     end
   end
 end
 
 -- 获取菜单激活项
 function Menu:getActive()
-  return self.active
+  return self._active
 end
 
--- 设置菜单位置
+-- 设置菜单位置（这里指圆点 x、y 坐标）
 function Menu:setPosition(topLeft)
-  self.canvas:topLeft({ x = topLeft.x - self.ringSize / 2, y = topLeft.y - self.ringSize / 2 })
+  self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
 end
 
 -- 获取菜单位置
 function Menu:getPosition()
-  return self.canvas:topLeft()
+  return self._canvas:topLeft()
 end
 
 -- ---------- 逻辑处理 ----------
+
+-- 保存菜单弹出时鼠标的位置
+local menuPos = nil
 
 local menu = Menu:new({
   menus = APPLICATIONS,
@@ -171,30 +171,15 @@ local menu = Menu:new({
   ringThickness = RING_THICKNESS,
   iconSize = ICON_SIZE,
   inactiveColor = COLOR_PATTERN.inactive,
-  activeColor = COLOR_PATTERN.active
+  activeColor = COLOR_PATTERN.active,
 })
-
--- 保存菜单弹出时鼠标的位置
-local menuPos = nil
 
 -- 处理鼠标移动事件
 local function handleMouseMoved()
   local mousePos = hs.mouse.absolutePosition()
-  local centerX = nil
-  local centerY = nil
-
-  if FOLLOW_MOUSE then
-    centerX = menuPos.x
-    centerY = menuPos.y
-  else
-    local screenFrame = hs.screen.primaryScreen():fullFrame()
-    centerX = screenFrame.w / 2
-    centerY = screenFrame.h / 2
-  end
-
   -- 鼠标指针与中心点的距离
-  local distance = math.sqrt(math.abs(mousePos.x - centerX)^2 + math.abs(mousePos.y - centerY)^2)
-  local rad = math.atan2(mousePos.y - centerY, mousePos.x - centerX)
+  local distance = math.sqrt(math.abs(mousePos.x - menuPos.x)^2 + math.abs(mousePos.y - menuPos.y)^2)
+  local rad = math.atan2(mousePos.y - menuPos.y, mousePos.x - menuPos.x)
   local deg = math.deg(rad)
   -- 转为 0 - 360
   deg = (deg + 90 + 360 / #APPLICATIONS / 2) % 360
@@ -214,10 +199,21 @@ local function handleShowMenu()
     return
   end
 
+  local frame = hs.screen.primaryScreen():fullFrame()
+
   if FOLLOW_MOUSE then
-    menuPos = hs.mouse.absolutePosition()
-    menu:setPosition(menuPos)
+    local mousePos = hs.mouse.absolutePosition()
+    menuPos = {
+      x = utils.clamp(mousePos.x, frame.x + RING_SIZE / 2, frame.x + frame.w - RING_SIZE / 2),
+      y = utils.clamp(mousePos.y, frame.y + RING_SIZE / 2, frame.y + frame.h - RING_SIZE / 2)
+    }
+  else
+    menuPos = {
+      x = (frame.x + frame.w) / 2,
+      y = (frame.y + frame.h) / 2
+    }
   end
+  menu:setPosition(menuPos)
   menu:show()
   -- 菜单显示后开始监听鼠标移动事件
   r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, handleMouseMoved)
