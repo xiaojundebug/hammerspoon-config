@@ -1,6 +1,11 @@
 -- **************************************************
 -- 环形 app 启动器
 -- **************************************************
+-- 使用方式：
+-- 1. 按下 alt + tab 呼出环形菜单，这时候可以松开 tab 键
+-- 2. 滑动鼠标选中目标 app，超出圆的范围也是可以的，鼠标放到中间空白处则是取消选中
+-- 3. 松开 alt 键跳到目标 app
+-- **************************************************
 
 local utils = require('./utils')
 
@@ -155,11 +160,6 @@ function Menu:setPosition(topLeft)
   self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
 end
 
--- 获取菜单位置
-function Menu:getPosition()
-  return self._canvas:topLeft()
-end
-
 -- ---------- 逻辑处理 ----------
 
 -- 保存菜单弹出时鼠标的位置
@@ -193,13 +193,13 @@ local function handleMouseMoved()
   menu:setActive(active)
 end
 
--- 处理显示菜单
+-- 显示逻辑处理
 local function handleShowMenu()
   if menu:isShowing() then
     return
   end
 
-  local frame = hs.screen.primaryScreen():fullFrame()
+  local frame = hs.mouse.getCurrentScreen():fullFrame()
 
   if FOLLOW_MOUSE then
     local mousePos = hs.mouse.absolutePosition()
@@ -218,11 +218,12 @@ local function handleShowMenu()
   -- 菜单显示后开始监听鼠标移动事件
   r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, handleMouseMoved)
   r_mouseEvtTap:start()
+
   -- 初始化触发计算一次
   handleMouseMoved()
 end
 
--- 处理隐藏菜单
+-- 隐藏逻辑处理
 local function handleHideMenu()
   if not menu:isShowing() then
     return
