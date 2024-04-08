@@ -20,6 +20,7 @@ end
 function module.throttle(func, delay)
   local wait = false
   local storedArgs = nil
+  local timer = nil
 
   function checkStoredArgs()
     if storedArgs == nil then
@@ -27,7 +28,7 @@ function module.throttle(func, delay)
     else
       func(table.unpack(storedArgs))
       storedArgs = nil
-      hs.timer.doAfter(delay, checkStoredArgs)
+      timer = hs.timer.doAfter(delay, checkStoredArgs)
     end
   end
 
@@ -41,7 +42,7 @@ function module.throttle(func, delay)
 
     func(table.unpack(args))
     wait = true
-    hs.timer.doAfter(delay, checkStoredArgs)
+    timer = hs.timer.doAfter(delay, checkStoredArgs)
   end
 end
 
