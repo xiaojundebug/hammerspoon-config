@@ -192,7 +192,6 @@ local function handleMouseMoved()
     active = nil
   end
 
-  print('[ring] setActive: ' .. tostring(active))
   menu:setActive(active)
 end
 local throttledHandleMouseMoved = utils.throttle(handleMouseMoved, 1 / 60)
