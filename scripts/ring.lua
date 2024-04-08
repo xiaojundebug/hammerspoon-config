@@ -90,7 +90,7 @@ function Menu:new(config)
     radius = halfRingSize - halfRingThickness,
     startAngle = -halfPieceDeg,
     endAngle = halfPieceDeg,
-    strokeWidth = self._ringThickness - 6,
+    strokeWidth = self._ringThickness * 0.9,
     strokeColor = self._activeColor,
     arcRadii = false
   }
@@ -192,8 +192,10 @@ local function handleMouseMoved()
     active = nil
   end
 
+  print('[ring] setActive: ' .. tostring(active))
   menu:setActive(active)
 end
+local throttledHandleMouseMoved = utils.throttle(handleMouseMoved, 1 / 60)
 
 -- 显示逻辑处理
 local function handleShowMenu()
@@ -220,7 +222,7 @@ local function handleShowMenu()
   menu:show()
 
   -- 菜单显示后开始监听鼠标移动事件
-  r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, utils.throttle(handleMouseMoved, 1 / 60))
+  r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, throttledHandleMouseMoved)
   r_mouseEvtTap:start()
 
   -- 初始化触发计算一次
