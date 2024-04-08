@@ -176,7 +176,9 @@ local menu = Menu:new({
 
 -- 处理鼠标移动事件
 local function handleMouseMoved()
+  local now = hs.timer.secondsSinceEpoch()
   local mousePos = hs.mouse.absolutePosition()
+
   -- 鼠标指针与中心点的距离
   local distance = math.sqrt(math.abs(mousePos.x - menuPos.x)^2 + math.abs(mousePos.y - menuPos.y)^2)
   local rad = math.atan2(mousePos.y - menuPos.y, mousePos.x - menuPos.x)
@@ -213,10 +215,12 @@ local function handleShowMenu()
       y = (frame.y + frame.h) / 2
     }
   end
+
   menu:setPosition(menuPos)
   menu:show()
+
   -- 菜单显示后开始监听鼠标移动事件
-  r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, handleMouseMoved)
+  r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, utils.throttle(handleMouseMoved, 1 / 60))
   r_mouseEvtTap:start()
 
   -- 初始化触发计算一次

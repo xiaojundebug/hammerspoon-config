@@ -1,30 +1,47 @@
 local module = {}
 
-function module.setTimeout(callback, delay)
-  local timer = hs.timer.doAfter(delay, function()
-    callback()
-  end)
-
-  timer:start()
-
-  return function()
-    timer:stop()
-  end
-end
-
 function module.debounce(func, delay)
-  local clearTimeout = nil
+  local timer = nil
 
   return function(...)
     local args = { ... }
 
-    if clearTimeout ~= nil then
-      clearTimeout()
+    if timer ~= nil then
+      timer:stop()
+      timer = nil
     end
 
-    clearTimeout = module.setTimeout(function()
+    timer = hs.timer.doAfter(delay, function()
       func(table.unpack(args))
-    end, delay)
+    end)
+  end
+end
+
+function module.throttle(func, delay)
+  local wait = false
+  local storedArgs = nil
+
+  function checkStoredArgs()
+    if storedArgs == nil then
+      wait = false
+    else
+      func(table.unpack(storedArgs))
+      storedArgs = nil
+      hs.timer.doAfter(delay, checkStoredArgs)
+    end
+  end
+
+  return function(...)
+    local args = { ... }
+
+    if wait then
+      storedArgs = args
+      return
+    end
+
+    func(table.unpack(args))
+    wait = true
+    hs.timer.doAfter(delay, checkStoredArgs)
   end
 end
 
