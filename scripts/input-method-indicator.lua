@@ -2,74 +2,70 @@
 -- 输入法指示器
 -- **************************************************
 
-local height = 5
-local alpha = 0.9
--- 配置指示器颜色
-local colorsConfig = {
-  {
-    ime = 'com.apple.inputmethod.SCIM.ITABC', -- 系统自带简中输入法
-    colors = {
-      { hex = '#e11d48' },
-      -- 你可以使用多个颜色
-      -- { hex = '#ffffff' },
-      -- { hex = '#3b82f6' },
-    }
-  },
+-- 指示器高度
+local HEIHGT = 5
+-- 指示器透明度
+local ALPHA = 0.9
+-- 指示器颜色
+local IME_TO_COLORS = {
+  -- 系统自带简中输入法
+  ['com.apple.inputmethod.SCIM.ITABC'] = {
+    { hex = '#2563eb' },
+    -- 你可以使用多个颜色
+    -- { hex = '#ffffff' },
+    -- { hex = '#ef4444' },
+  }
 }
 
-local myCanvas = {}
+local canvases = {}
 local lastSourceID = ''
 
 -- 绘制角标矩形
-local function drawIndicator(config)
-  local colors = config.colors
+local function drawIndicator(colors)
   local screens = hs.screen.allScreens()
 
-  for _, s in ipairs(screens) do
-    local frame = s:fullFrame()
+  for i, screen in ipairs(screens) do
+    local frame = screen:fullFrame()
     local cellW = frame.w / #colors
 
-    for i, color in ipairs(config.colors) do
-      local startX = (i - 1) * cellW
+    local canvas = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = HEIHGT })
+    canvas:level(hs.canvas.windowLevels.overlay)
+    canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
+    canvas:alpha(ALPHA)
+
+    for j, color in ipairs(colors) do
+      local startX = (j - 1) * cellW
       local startY = 0
       local rect = {
         type = 'rectangle',
         fillColor = color,
         action = 'fill',
-        frame = { x = startX, y = startY, w = cellW, h = height }
+        frame = { x = startX, y = startY, w = cellW, h = HEIHGT }
       }
 
-      if not myCanvas[s] then
-        myCanvas[s] = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = height })
-        myCanvas[s]:level(hs.canvas.windowLevels.overlay)
-        myCanvas[s]:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
-        myCanvas[s]:alpha(alpha)
-      end
-
-      myCanvas[s][i] = rect
+      canvas[j] = rect
     end
 
-    myCanvas[s]:show()
+    canvas:show()
+    canvases[i] = canvas
   end
 end
 
 -- 清除 Canvas 上的内容
 local function clearCanvas()
-  for _, canvas in pairs(myCanvas) do
+  for _, canvas in ipairs(canvases) do
     canvas:delete()
   end
-  myCanvas = {}
+  canvases = {}
 end
 
 -- 更新 Canvas 显示
 local function updateCanvas()
   clearCanvas()
 
-  for _, config in pairs(colorsConfig) do
-    local ime = config.ime
-
+  for ime, colors in pairs(IME_TO_COLORS) do
     if hs.keycodes.currentSourceID() == ime then
-      drawIndicator(config)
+      drawIndicator(colors)
       break
     end
   end

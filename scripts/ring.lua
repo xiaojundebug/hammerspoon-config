@@ -99,7 +99,7 @@ function Menu:new(config)
   self._canvas[2] = indicator
 
   -- 渲染 icon
-  for key, app in pairs(self._menus) do
+  for key, app in ipairs(self._menus) do
     local image = hs.image.imageFromPath(app.icon)
     local rad = math.rad(pieceDeg * (key - 1) - 90)
 
@@ -194,6 +194,7 @@ local function handleMouseMoved()
 
   menu:setActive(active)
 end
+-- 貌似也并没节省到性能，throttle 一下图心理安慰
 local throttledHandleMouseMoved = utils.throttle(handleMouseMoved, 1 / 60)
 
 -- 显示逻辑处理
@@ -234,8 +235,8 @@ local function handleHideMenu()
     return
   end
   
-  -- 菜单隐藏后移除监听鼠标移动事件
   menu:hide()
+  -- 菜单隐藏后移除监听鼠标移动事件
   r_mouseEvtTap:stop()
 
   local active = menu:getActive()
