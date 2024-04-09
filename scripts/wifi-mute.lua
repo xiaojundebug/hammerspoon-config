@@ -3,7 +3,7 @@
 -- **************************************************
 
 -- 定义公司的 Wi-Fi 名称
-local companyWifi = 'MUDU'
+local WORK_SSID = 'MUDU'
 
 -- 静音函数
 local function muteVolume()
@@ -17,8 +17,9 @@ end
 
 -- 监听 Wi-Fi 变化
 wm_wifiWatcher = hs.wifi.watcher.new(function()
-  local currentWifi = hs.wifi.currentNetwork()
-  if currentWifi == companyWifi then
+  local currentSSID = hs.wifi.currentNetwork()
+
+  if currentSSID == WORK_SSID then
     muteVolume() -- 如果是公司 Wi-Fi，则静音
   else
     unmuteVolume() -- 否则取消静音
