@@ -10,10 +10,9 @@ local ALPHA = 0.9
 local IME_TO_COLORS = {
   -- 系统自带简中输入法
   ['com.apple.inputmethod.SCIM.ITABC'] = {
-    { hex = '#2563eb' },
-    -- 你可以使用多个颜色
-    -- { hex = '#ffffff' },
-    -- { hex = '#ef4444' },
+    { hex = '#8b5cf6' },
+    -- 你可以使用多个颜色，它们之间会进行渐变
+    { hex = '#0ea5e9' },
   }
 }
 
@@ -26,26 +25,25 @@ local function drawIndicator(colors)
 
   for i, screen in ipairs(screens) do
     local frame = screen:fullFrame()
-    local cellW = frame.w / #colors
 
     local canvas = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = HEIHGT })
     canvas:level(hs.canvas.windowLevels.overlay)
     canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
     canvas:alpha(ALPHA)
 
-    for j, color in ipairs(colors) do
-      local startX = (j - 1) * cellW
-      local startY = 0
-      local rect = {
-        type = 'rectangle',
-        fillColor = color,
-        action = 'fill',
-        frame = { x = startX, y = startY, w = cellW, h = HEIHGT }
-      }
-
-      canvas[j] = rect
+    local rect = {
+      type = 'rectangle',
+      action = 'fill',
+      frame = { x = 0, y = 0, w = frame.w, h = HEIHGT }
+    }
+    if #colors > 1 then
+      rect.fillGradient = 'linear'
+      rect.fillGradientColors = colors
+    else
+      rect.fillColor = colors[1]
     end
 
+    canvas[1] = rect
     canvas:show()
     canvases[i] = canvas
   end
