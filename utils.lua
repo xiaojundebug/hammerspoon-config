@@ -24,7 +24,7 @@ function module.throttle(func, delay)
   local storedArgs = nil
   local timer = nil
 
-  function checkStoredArgs()
+  local function checkStoredArgs()
     if storedArgs == nil then
       wait = false
     else
@@ -68,7 +68,7 @@ function module.animate(options)
   local st = hs.timer.absoluteTime()
   local timer = nil
 
-  function progress()
+  local function progress()
     local now = hs.timer.absoluteTime()
     local diffSec = (now - st) / 1000000000
 

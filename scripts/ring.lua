@@ -43,7 +43,7 @@ local ANIMATION_DURATION = 0.2
 local Menu = {}
 
 -- EaseOutQuint
-function easing(t)
+local function easing(t)
   return 1 - math.pow(1 - t, 5);
 end
 
