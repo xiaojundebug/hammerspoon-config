@@ -33,10 +33,19 @@ local COLOR_PATTERN = {
   inactive = { red = 0.1, green = 0.1, blue = 0.15, alpha = 0.95 },
   active = { hex = '#565584' }
 }
+-- 是否展示动画
+local ANIMATED = true
+-- 动画时长
+local ANIMATION_DURATION = 0.2
 
 -- ---------- 菜单封装 ----------
 
 local Menu = {}
+
+-- EaseOutQuint
+function easing(t)
+  return 1 - math.pow(1 - t, 5);
+end
 
 -- 创建菜单
 function Menu:new(config)
@@ -52,6 +61,8 @@ function Menu:new(config)
   self._active = nil
   self._inactiveColor = config.inactiveColor or { hex = '#333333' }
   self._activeColor = config.activeColor or { hex = '#3b82f6' }
+  self._animated = config.animated or false
+  self._animationDuration = config.animationDuration or 0.5
 
   local halfRingSize = self._ringSize / 2
   local halfRingThickness = self._ringThickness / 2
@@ -119,12 +130,36 @@ end
 
 -- 显示菜单
 function Menu:show()
+  -- 根据配置决定是否开启动画
+  if self._animated then
+    local halfRingSize = self._ringSize / 2
+    local matrix = hs.canvas.matrix.identity()
+
+    r_cancelAnimation = utils.animate({
+      duration = self._animationDuration,
+      easing = easing,
+      onProgress = function(progress)
+        self._canvas:transformation(
+          matrix
+            :translate(halfRingSize, halfRingSize)
+            :scale((0.2 * progress) + 0.8)
+            :translate(-halfRingSize, -halfRingSize)
+        )
+        self._canvas:alpha(progress)
+      end
+    })
+  end 
+
   self._canvas:show()
 end
 
 -- 隐藏菜单
 function Menu:hide()
   self._canvas:hide()
+  
+  if self._animated then
+    r_cancelAnimation()
+  end
 end
 
 -- 返回菜单是否显示
@@ -172,11 +207,12 @@ local menu = Menu:new({
   iconSize = ICON_SIZE,
   inactiveColor = COLOR_PATTERN.inactive,
   activeColor = COLOR_PATTERN.active,
+  animated = ANIMATED,
+  animationDuration = ANIMATION_DURATION,
 })
 
 -- 处理鼠标移动事件
 local function handleMouseMoved()
-  local now = hs.timer.secondsSinceEpoch()
   local mousePos = hs.mouse.absolutePosition()
 
   -- 鼠标指针与中心点的距离

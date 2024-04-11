@@ -5,7 +5,7 @@
 -- 指示器高度
 local HEIHGT = 5
 -- 指示器透明度
-local ALPHA = 0.9
+local ALPHA = 1
 -- 指示器颜色
 local IME_TO_COLORS = {
   -- 系统自带简中输入法
@@ -17,7 +17,7 @@ local IME_TO_COLORS = {
 }
 
 local canvases = {}
-local lastSourceID = ''
+local lastSourceID = nil
 
 -- 绘制角标矩形
 local function drawIndicator(colors)
