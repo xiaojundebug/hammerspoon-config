@@ -8,6 +8,7 @@
 -- **************************************************
 
 local utils = require('./utils')
+local tween = require('./tween')
 
 -- ---------- 自定义配置 ----------
 
@@ -41,11 +42,6 @@ local ANIMATION_DURATION = 0.2
 -- ---------- 菜单封装 ----------
 
 local Menu = {}
-
--- EaseOutQuint
-local function easing(t)
-  return 1 - math.pow(1 - t, 5);
-end
 
 -- 创建菜单
 function Menu:new(config)
@@ -137,12 +133,12 @@ function Menu:show()
 
     r_cancelAnimation = utils.animate({
       duration = self._animationDuration,
-      easing = easing,
+      easing = tween.easeOutQuint,
       onProgress = function(progress)
         self._canvas:transformation(
           matrix
             :translate(halfRingSize, halfRingSize)
-            :scale((0.2 * progress) + 0.8)
+            :scale((0.1 * progress) + 0.9)
             :translate(-halfRingSize, -halfRingSize)
         )
         self._canvas:alpha(progress)

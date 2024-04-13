@@ -9,28 +9,23 @@ local ENGLISH = 'com.apple.keylayout.ABC'
 
 -- 定义你自己想要自动切换输入法的 App
 local APP_TO_IME = {
-  { '/Applications/Terminal.app', ENGLISH } ,
-  { '/Applications/iTerm.app', ENGLISH },
-  { '/Applications/Visual Studio Code.app', ENGLISH },
-  { '/Applications/WebStorm.app', ENGLISH },
-  { '/Applications/Google Chrome.app', ENGLISH },
-  { '/Applications/QQ.app', CHINESE },
-  { '/Applications/WeChat.app', CHINESE },
-  { '/Applications/企业微信.app', CHINESE },
-  { '/Applications/DingTalk.app', CHINESE },
+  ['/Applications/Terminal.app'] = ENGLISH ,
+  ['/Applications/iTerm.app'] = ENGLISH,
+  ['/Applications/Visual Studio Code.app'] = ENGLISH,
+  ['/Applications/WebStorm.app'] = ENGLISH,
+  ['/Applications/Google Chrome.app'] = ENGLISH,
+  ['/Applications/QQ.app'] = CHINESE,
+  ['/Applications/WeChat.app'] = CHINESE,
+  ['/Applications/企业微信.app'] = CHINESE,
+  ['/Applications/DingTalk.app'] = CHINESE,
 }
 
 local function updateFocusedAppInputMethod(appObject)
   local focusedAppPath = appObject:path()
+  local expectedIme = APP_TO_IME[focusedAppPath]
 
-  for _, app in ipairs(APP_TO_IME) do
-    local appPath = app[1]
-    local expectedIme = app[2]
-
-    if focusedAppPath == appPath then
-      hs.keycodes.currentSourceID(expectedIme)
-      break
-    end
+  if expectedIme then
+    hs.keycodes.currentSourceID(expectedIme)
   end
 end
 

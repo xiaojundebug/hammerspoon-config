@@ -72,7 +72,7 @@ function module.animate(options)
     local now = hs.timer.absoluteTime()
     local diffSec = (now - st) / 1000000000
 
-    if diffSec < duration then
+    if diffSec <= duration then
       onProgress(easing(diffSec / duration))
       timer = hs.timer.doAfter(1 / 60, function() progress() end)
     else
