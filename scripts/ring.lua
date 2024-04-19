@@ -10,7 +10,9 @@
 local utils = require('./utils')
 local tween = require('./tween')
 
--- ---------- 自定义配置 ----------
+-- ------------------------------
+-- 自定义配置
+-- ------------------------------
 
 -- 菜单项配置
 local APPLICATIONS = {
@@ -39,7 +41,9 @@ local ANIMATED = true
 -- 动画时长
 local ANIMATION_DURATION = 0.2
 
--- ---------- 菜单封装 ----------
+-- ------------------------------
+-- 菜单封装
+-- ------------------------------
 
 local Menu = {}
 
@@ -86,7 +90,7 @@ function Menu:new(config)
     strokeColor = self._inactiveColor,
     arcRadii = false
   }
-  
+
   self._canvas[1] = ring
 
   -- 渲染激活项高亮背景
@@ -144,7 +148,7 @@ function Menu:show()
         self._canvas:alpha(progress)
       end
     })
-  end 
+  end
 
   self._canvas:show()
 end
@@ -152,7 +156,7 @@ end
 -- 隐藏菜单
 function Menu:hide()
   self._canvas:hide()
-  
+
   if self._animated then
     r_cancelAnimation()
   end
@@ -191,7 +195,9 @@ function Menu:setPosition(topLeft)
   self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
 end
 
--- ---------- 逻辑处理 ----------
+-- ------------------------------
+-- 菜单调用以及事件监听处理
+-- ------------------------------
 
 -- 保存菜单弹出时鼠标的位置
 local menuPos = nil
@@ -266,7 +272,7 @@ local function handleHideMenu()
   if not menu:isShowing() then
     return
   end
-  
+
   menu:hide()
   -- 菜单隐藏后移除监听鼠标移动事件
   r_mouseEvtTap:stop()
@@ -309,4 +315,3 @@ end
 -- 监听快捷键
 r_keyEvtTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.flagsChanged }, handleKeyEvent)
 r_keyEvtTap:start()
-

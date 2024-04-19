@@ -4,20 +4,20 @@
 
 local utils = require('./utils')
 
-local CHINESE = 'com.apple.inputmethod.SCIM.ITABC'
-local ENGLISH = 'com.apple.keylayout.ABC'
+local Pinyin = 'com.apple.inputmethod.SCIM.ITABC'
+local ABC = 'com.apple.keylayout.ABC'
 
 -- 定义你自己想要自动切换输入法的 App
 local APP_TO_IME = {
-  ['/Applications/Terminal.app'] = ENGLISH ,
-  ['/Applications/iTerm.app'] = ENGLISH,
-  ['/Applications/Visual Studio Code.app'] = ENGLISH,
-  ['/Applications/WebStorm.app'] = ENGLISH,
-  ['/Applications/Google Chrome.app'] = ENGLISH,
-  ['/Applications/QQ.app'] = CHINESE,
-  ['/Applications/WeChat.app'] = CHINESE,
-  ['/Applications/企业微信.app'] = CHINESE,
-  ['/Applications/DingTalk.app'] = CHINESE,
+  ['/Applications/Terminal.app'] = ABC ,
+  ['/Applications/iTerm.app'] = ABC,
+  ['/Applications/Visual Studio Code.app'] = ABC,
+  ['/Applications/WebStorm.app'] = ABC,
+  ['/Applications/Google Chrome.app'] = ABC,
+  ['/Applications/QQ.app'] = Pinyin,
+  ['/Applications/WeChat.app'] = Pinyin,
+  ['/Applications/企业微信.app'] = Pinyin,
+  ['/Applications/DingTalk.app'] = Pinyin,
 }
 
 local function updateFocusedAppInputMethod(appObject)
