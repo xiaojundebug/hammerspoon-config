@@ -20,22 +20,23 @@ local APP_TO_IME = {
   ['/Applications/DingTalk.app'] = Pinyin,
 }
 
+-- --------------------------------------------------
+
 local function updateFocusedAppInputMethod(appObject)
   local focusedAppPath = appObject:path()
-  local expectedIme = APP_TO_IME[focusedAppPath]
+  local ime = APP_TO_IME[focusedAppPath]
 
-  if expectedIme then
-    hs.keycodes.currentSourceID(expectedIme)
+  if ime then
+    hs.keycodes.currentSourceID(ime)
   end
 end
-
 local debouncedUpdateFn = utils.debounce(updateFocusedAppInputMethod, 0.1)
 
-local function applicationWatcher(appName, eventType, appObject)
-  if eventType == hs.application.watcher.activated then
-    debouncedUpdateFn(appObject)
+asim_appWatcher = hs.application.watcher.new(
+  function(appName, eventType, appObject)
+    if eventType == hs.application.watcher.activated then
+      debouncedUpdateFn(appObject)
+    end
   end
-end
-
-asim_appWatcher = hs.application.watcher.new(applicationWatcher)
+)
 asim_appWatcher:start()

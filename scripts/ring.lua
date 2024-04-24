@@ -10,9 +10,9 @@
 local utils = require('./utils')
 local tween = require('./tween')
 
--- ------------------------------
+-- --------------------------------------------------
 -- 自定义配置
--- ------------------------------
+-- --------------------------------------------------
 
 -- 菜单项配置
 local APPLICATIONS = {
@@ -33,17 +33,19 @@ local ICON_SIZE = RING_THICKNESS / 2
 local FOLLOW_MOUSE = true
 -- 颜色配置
 local COLOR_PATTERN = {
-  inactive = { red = 0.1, green = 0.1, blue = 0.15, alpha = 0.95 },
+  inactive = { hex = '#181825' },
   active = { hex = '#565584' }
 }
+-- 透明度
+local ALPHA = 0.96
 -- 是否展示动画
 local ANIMATED = true
 -- 动画时长
 local ANIMATION_DURATION = 0.2
 
--- ------------------------------
+-- --------------------------------------------------
 -- 菜单封装
--- ------------------------------
+-- --------------------------------------------------
 
 local Menu = {}
 
@@ -61,6 +63,7 @@ function Menu:new(config)
   self._active = nil
   self._inactiveColor = config.inactiveColor or { hex = '#333333' }
   self._activeColor = config.activeColor or { hex = '#3b82f6' }
+  self._alpha = config.alpha or 1
   self._animated = config.animated or false
   self._animationDuration = config.animationDuration or 0.5
 
@@ -77,6 +80,7 @@ function Menu:new(config)
     h = self._ringSize
   })
   self._canvas:level(hs.canvas.windowLevels.overlay)
+  self._canvas:alpha(self._alpha)
 
   -- 渲染圆环
   local ring = {
@@ -145,7 +149,7 @@ function Menu:show()
             :scale((0.1 * progress) + 0.9)
             :translate(-halfRingSize, -halfRingSize)
         )
-        self._canvas:alpha(progress)
+        self._canvas:alpha(self._alpha * progress)
       end
     })
   end
@@ -195,9 +199,9 @@ function Menu:setPosition(topLeft)
   self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
 end
 
--- ------------------------------
+-- --------------------------------------------------
 -- 菜单调用以及事件监听处理
--- ------------------------------
+-- --------------------------------------------------
 
 -- 保存菜单弹出时鼠标的位置
 local menuPos = nil
@@ -209,6 +213,7 @@ local menu = Menu:new({
   iconSize = ICON_SIZE,
   inactiveColor = COLOR_PATTERN.inactive,
   activeColor = COLOR_PATTERN.active,
+  alpha = ALPHA,
   animated = ANIMATED,
   animationDuration = ANIMATION_DURATION,
 })
@@ -292,21 +297,20 @@ end
 
 -- 处理按键事件
 local function handleKeyEvent(event)
+  -- 48 为 tab，58 为 alt
+  local keyCode = event:getKeyCode()
+  local isAltDown = event:getFlags().alt
+
   -- 按下了 alt + tab 后显示菜单
-  if event:getKeyCode() == 48 and event:getFlags().alt then
-    if event:getType() == hs.eventtap.event.types.keyDown then
-      handleShowMenu()
-      return true
-    end
-    return false
+  if keyCode == 48 and isAltDown then
+    handleShowMenu()
+    -- 阻止事件传递，否则会导致焦点切换，因为按下了 tab 键
+    return true
   end
 
   -- 松开了 alt 后隐藏菜单
-  if event:getKeyCode() == 58 then
-    if event:getType() == hs.eventtap.event.types.flagsChanged then
-      handleHideMenu()
-    end
-    return true
+  if keyCode == 58 and not isAltDown then
+    handleHideMenu()
   end
 
   return false
