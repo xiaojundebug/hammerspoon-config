@@ -26,22 +26,22 @@ local APPLICATIONS = {
 -- 菜单圆环大小
 local RING_SIZE = 280
 -- 菜单圆环粗细
-local RING_THICKNESS = RING_SIZE / 3.75
+local RING_THICKNESS = RING_SIZE / 4
 -- 图标大小
 local ICON_SIZE = RING_THICKNESS / 2
 -- 是否菜单在鼠标指针处弹出，而不是居中
 local FOLLOW_MOUSE = true
 -- 颜色配置
 local COLOR_PATTERN = {
-  inactive = { hex = '#181825' },
-  active = { hex = '#565584' }
+  inactive = { hex = '#18181b' },
+  active = { hex = '#34a853' }
 }
 -- 透明度
-local ALPHA = 0.96
+local ALPHA = 1
 -- 是否展示动画
 local ANIMATED = true
 -- 动画时长
-local ANIMATION_DURATION = 0.2
+local ANIMATION_DURATION = 0.3
 
 -- --------------------------------------------------
 -- 菜单封装
@@ -141,7 +141,7 @@ function Menu:show()
 
     r_cancelAnimation = utils.animate({
       duration = self._animationDuration,
-      easing = tween.easeOutQuint,
+      easing = tween.easeOutExpo,
       onProgress = function(progress)
         self._canvas:transformation(
           matrix

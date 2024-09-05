@@ -1,7 +1,7 @@
 local module = {}
 
-function module.easeOutQuint(t)
-  return 1 - math.pow(1 - t, 5);
+function module.easeOutExpo(t)
+  return t == 1 and 1 or 1 - math.pow(2, -10 * t)
 end
 
 return module
