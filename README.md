@@ -10,6 +10,7 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 - [caffeinated.lua](./scripts/caffeinated.lua) - 防止屏幕进入休眠
 - [wifi-mute.lua](./scripts/wifi-mute.lua) - 连接到公司 wifi 后自动静音扬声器
 - [defeating-paste-blocking.lua](./scripts/defeating-paste-blocking.lua) - 有些网站禁止粘贴，该脚本可以模拟系统输入事件绕过限制
+- [magspeed-smooth-scrolling-fix.lua](./scripts/magspeed-smooth-scrolling-fix.lua) - 罗技无极滚轮鼠标回滚问题尝试性优化
 
 ## 怎么使用
 
