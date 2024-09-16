@@ -24,31 +24,31 @@ local REVERSE_THRESHOLD = 2
 
 local prevEvtTime = 0
 local prevDeltaY = 0
-local scrollCount = 0
+local stableCount = 0
 
 local function handleScrollWheel(event)
   local sourceGroupID = event:getProperty(hs.eventtap.event.properties.eventSourceGroupID)
+  local deltaY = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis1)
+
   -- 不对内置触摸板进行处理，测试发现触摸板该值为 0，可以作为判定依据
-  if sourceGroupID == 0 then
+  if sourceGroupID == 0 or deltaY == 0 then
     return false
   end
 
-  local deltaY = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis1)
   local now = hs.timer.absoluteTime() / 1000000
   local isDirChanged = deltaY ~= 0 and deltaY * prevDeltaY <= 0
   local diffMs = now - prevEvtTime
 
-  if isDirChanged or diffMs >= 100 then
-    scrollCount = 0
-    prevReverseTime = now
+  if isDirChanged or diffMs >= 200 then
+    stableCount = 0
   else
-    scrollCount = scrollCount + 1
+    stableCount = stableCount + 1
   end
 
   prevEvtTime = now
   prevDeltaY = deltaY
 
-  if scrollCount < REVERSE_THRESHOLD then
+  if stableCount < REVERSE_THRESHOLD then
     return true
   end
 
