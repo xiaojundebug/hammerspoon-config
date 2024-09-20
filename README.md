@@ -14,6 +14,6 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 
 ## 怎么使用
 
-直接把所有 lua 脚本都放到你的 hammerspoon 目录中即可，其中 `bookmarks.lua`、`hidden-compartment.lua` 是我的个人隐私脚本，所以你需要将它从 `init.lua` 中去掉，否则将报错
+直接把所有 lua 脚本都放到你的 hammerspoon 目录中即可
 
 > _你可能使用的和我不是同一种输入法，所以需要修改一下 `auto-switch-input-method` 与 `input-method-indicator` 的配置，你可以通过 `defaults read ~/Library/Preferences/com.apple.HIToolbox.plist AppleSelectedInputSources | grep "Input Mode"` 来查看当前输入法 Source ID_
