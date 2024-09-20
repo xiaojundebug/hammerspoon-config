@@ -1,13 +1,14 @@
 
 -- **************************************************
 -- 罗技 MX Anywhere 3s 鼠标回滚问题尝试性优化
--- 可能对其他类似鼠标也有效果，如：罗技 MX Master 系列
--- ⚠️ 该脚本可能对性能有一定影响
 -- **************************************************
 
+-- 该脚本可能对其他类似鼠标也有效果，如：罗技 MX Master 系列
+-- 该脚本可能对性能有一定影响
+
 -- 回滚场景：
--- 1. Logi Options+ 中开启了平滑滚动
--- 2. 即使使用棘轮模式（刻度模式），当手指放到滚轮上，也有概率会触发回滚
+-- 在 Logi Options+ 中开启了平滑滚动的情况下，即便使用棘轮模式（刻度模式），
+-- 当手指放到滚轮上，或者手指从滚轮上拿开时也有概率会触发回滚
 
 -- 原因分析：
 -- 由于开启了平滑滚动，滚轮任何细粒度的滚动都会触发事件，
@@ -18,8 +19,7 @@
 -- 简单来说，当鼠标滚轮事件触发时，判断一下滚动方向是不是发生了变化，
 -- 只有在同一个方向上滚动到一定次数后，才认为是真的发生了预期滚动
 
--- 忽略在同一方向上的前几次事件
--- 这个次数不宜过高，否则会影响跟手性，一般来说设置 1～3 就可以规避掉大部分的误触
+-- 防抖阈值，这个值不宜过高，否则会影响跟手性，一般来说设置 1～3 就可以规避掉大部分的误触
 local REVERSE_THRESHOLD = 2
 
 local prevEvtTime = 0
@@ -35,19 +35,21 @@ local function handleScrollWheel(event)
     return false
   end
 
-  local now = hs.timer.absoluteTime() / 1000000
   local isDirChanged = deltaY ~= 0 and deltaY * prevDeltaY <= 0
-  local diffMs = now - prevEvtTime
+  local evtTime = event:timestamp() / 1000000
+  local diffMs = evtTime - prevEvtTime
 
-  if isDirChanged or diffMs >= 200 then
+  -- 滚动方向发生变化或两次滚动的间隔时间超过 200ms，重新开始防抖
+  if isDirChanged or diffMs > 200 then
     stableCount = 0
   else
     stableCount = stableCount + 1
   end
 
-  prevEvtTime = now
+  prevEvtTime = evtTime
   prevDeltaY = deltaY
 
+  -- 未达到防抖阈值，阻止本次事件
   if stableCount < REVERSE_THRESHOLD then
     return true
   end
@@ -55,5 +57,5 @@ local function handleScrollWheel(event)
   return false
 end
 
-mssf_wheelEvtTap = hs.eventtap.new({hs.eventtap.event.types.scrollWheel}, handleScrollWheel)
+mssf_wheelEvtTap = hs.eventtap.new({ hs.eventtap.event.types.scrollWheel }, handleScrollWheel)
 mssf_wheelEvtTap:start()
