@@ -6,12 +6,14 @@
 local HEIHGT = 5
 -- 指示器透明度
 local ALPHA = 1
+-- 多个颜色之间线性渐变
+local ALLOW_LINEAR_GRADIENT = false
 -- 指示器颜色
 local IME_TO_COLORS = {
   -- 系统自带简中输入法
   ['com.apple.inputmethod.SCIM.ITABC'] = {
     { hex = '#dc2626' },
-    -- 你可以使用多个颜色，它们之间会进行渐变
+    -- { hex = '#eab308' },
     -- { hex = '#0ea5e9' },
   }
 }
@@ -20,7 +22,7 @@ local canvases = {}
 local lastSourceID = nil
 
 -- 绘制指示器
-local function drawIndicator(colors)
+local function draw(colors)
   local screens = hs.screen.allScreens()
 
   for i, screen in ipairs(screens) do
@@ -31,26 +33,38 @@ local function drawIndicator(colors)
     canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
     canvas:alpha(ALPHA)
 
-    local rect = {
-      type = 'rectangle',
-      action = 'fill',
-      frame = { x = 0, y = 0, w = frame.w, h = HEIHGT }
-    }
-    if #colors > 1 then
-      rect.fillGradient = 'linear'
-      rect.fillGradientColors = colors
+    if ALLOW_LINEAR_GRADIENT and #colors > 1 then
+      local rect = {
+        type = 'rectangle',
+        action = 'fill',
+        fillGradient = 'linear',
+        fillGradientColors = colors,
+        frame = { x = 0, y = 0, w = frame.w, h = HEIHGT }
+      }
+      canvas[1] = rect
     else
-      rect.fillColor = colors[1]
+      local cellW = frame.w / #colors
+
+      for j, color in ipairs(colors) do
+        local startX = (j - 1) * cellW
+        local startY = 0
+        local rect = {
+          type = 'rectangle',
+          action = 'fill',
+          fillColor = color,
+          frame = { x = startX, y = startY, w = cellW, h = HEIHGT }
+        }
+        canvas[j] = rect
+      end
     end
 
-    canvas[1] = rect
     canvas:show()
     canvases[i] = canvas
   end
 end
 
 -- 清除 Canvas 上的内容
-local function clearCanvas()
+local function clear()
   for _, canvas in ipairs(canvases) do
     canvas:delete()
   end
@@ -58,13 +72,13 @@ local function clearCanvas()
 end
 
 -- 更新 Canvas 显示
-local function updateCanvas(sourceID)
-  clearCanvas()
+local function update(sourceID)
+  clear()
 
   local colors = IME_TO_COLORS[sourceID or hs.keycodes.currentSourceID()]
 
   if colors then
-    drawIndicator(colors)
+    draw(colors)
   end
 end
 
@@ -72,7 +86,7 @@ local function handleInputSourceChanged()
   local currentSourceID = hs.keycodes.currentSourceID()
 
   if lastSourceID ~= currentSourceID then
-    updateCanvas(currentSourceID)
+    update(currentSourceID)
     lastSourceID = currentSourceID
   end
 end
@@ -88,11 +102,11 @@ imi_dn = hs.distributednotifications.new(
 -- 每秒同步一次，避免由于错过事件监听导致状态不同步
 imi_indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged)
 -- 屏幕变化时候重新渲染
-imi_screenWatcher = hs.screen.watcher.new(function() updateCanvas() end)
+imi_screenWatcher = hs.screen.watcher.new(update)
 
 imi_dn:start()
 imi_indicatorSyncTimer:start()
 imi_screenWatcher:start()
 
 -- 初始执行一次
-updateCanvas()
+update()

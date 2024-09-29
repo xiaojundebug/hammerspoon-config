@@ -297,19 +297,27 @@ end
 
 -- 处理按键事件
 local function handleKeyEvent(event)
-  -- 48 为 tab，58 为 alt
   local keyCode = event:getKeyCode()
+  local type = event:getType()
   local isAltDown = event:getFlags().alt
 
   -- 按下了 alt + tab 后显示菜单
-  if keyCode == 48 and isAltDown then
+  if
+    type == hs.eventtap.event.types.keyDown and
+    keyCode == hs.keycodes.map.tab and
+    isAltDown
+  then
     handleShowMenu()
-    -- 阻止事件传递，否则会导致焦点切换，因为按下了 tab 键
+    -- 阻止事件传递，否则可能会导致 UI 焦点切换，因为按下了 tab 键
     return true
   end
 
   -- 松开了 alt 后隐藏菜单
-  if keyCode == 58 and not isAltDown then
+  if
+    type == hs.eventtap.event.types.flagsChanged and
+    keyCode == hs.keycodes.map.alt and
+    not isAltDown
+  then
     handleHideMenu()
   end
 

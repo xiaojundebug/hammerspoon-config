@@ -22,32 +22,36 @@
 -- 防抖阈值，这个值不宜过高，否则会影响跟手性，一般来说设置 1～3 就可以规避掉大部分的误触
 local REVERSE_THRESHOLD = 2
 
-local prevEvtTime = 0
-local prevDeltaY = 0
+local lastDeltaY = 0
+local lastDeltaX = 0
+local lastEvtTime = 0
 local stableCount = 0
 
 local function handleScrollWheel(event)
   local sourceGroupID = event:getProperty(hs.eventtap.event.properties.eventSourceGroupID)
   local deltaY = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis1)
+  local deltaX = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis2)
 
   -- 不对内置触摸板进行处理，测试发现触摸板该值为 0，可以作为判定依据
-  if sourceGroupID == 0 or deltaY == 0 then
+  if sourceGroupID == 0 or (deltaY == 0 and deltaX == 0) then
     return false
   end
 
-  local isDirChanged = deltaY ~= 0 and deltaY * prevDeltaY <= 0
+  local isDirChangedY = deltaY ~= 0 and deltaY * lastDeltaY <= 0
+  local isDirChangedX = deltaX ~= 0 and deltaX * lastDeltaX <= 0
   local evtTime = event:timestamp() / 1000000
-  local diffMs = evtTime - prevEvtTime
+  local diffMs = evtTime - lastEvtTime
 
   -- 滚动方向发生变化或两次滚动的间隔时间超过 200ms，重新开始防抖
-  if isDirChanged or diffMs > 200 then
+  if isDirChangedY or isDirChangedX or diffMs > 200 then
     stableCount = 0
   else
     stableCount = stableCount + 1
   end
 
-  prevEvtTime = evtTime
-  prevDeltaY = deltaY
+  lastDeltaY = deltaY
+  lastDeltaX = deltaX
+  lastEvtTime = evtTime
 
   -- 未达到防抖阈值，阻止本次事件
   if stableCount < REVERSE_THRESHOLD then
