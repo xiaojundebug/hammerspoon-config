@@ -19,8 +19,12 @@
 -- 简单来说，当鼠标滚轮事件触发时，判断一下滚动方向是不是发生了变化，
 -- 只有在同一个方向上滚动到一定次数后，才认为是真的发生了预期滚动
 
--- 防抖阈值，这个值不宜过高，否则会影响跟手性，一般来说设置 1～3 就可以规避掉大部分的误触
+-- 防抖阈值，意味着在同方向上滚动超过设定次数后才会生效，
+-- 这个值不宜过高，否则会影响跟手性，一般来说设置 1～3 就可以规避掉大部分的误触
 local REVERSE_THRESHOLD = 2
+-- 两次滚动事件的间隔时间在多少毫秒之内认为是连续滚动，超过后需重新防抖（即使滚动方向没变），
+-- 不要设置太短，否则影响滚动连续性，保持默认值最好
+local TIMEOUT_THRESHOLD = 300
 
 local lastDeltaY = 0
 local lastDeltaX = 0
@@ -42,8 +46,8 @@ local function handleScrollWheel(event)
   local evtTime = event:timestamp() / 1000000
   local diffMs = evtTime - lastEvtTime
 
-  -- 滚动方向发生变化或两次滚动的间隔时间超过 200ms，重新开始防抖
-  if isDirChangedY or isDirChangedX or diffMs > 200 then
+  -- 滚动方向发生变化或两次滚动的间隔时间过长，重新开始防抖
+  if isDirChangedY or isDirChangedX or diffMs > TIMEOUT_THRESHOLD then
     stableCount = 0
   else
     stableCount = stableCount + 1
