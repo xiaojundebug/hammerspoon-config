@@ -2,6 +2,7 @@
 -- 输入法指示器
 -- **************************************************
 
+-- --------------------------------------------------
 -- 指示器高度
 local HEIHGT = 5
 -- 指示器透明度
@@ -14,9 +15,10 @@ local IME_TO_COLORS = {
   ['com.apple.inputmethod.SCIM.ITABC'] = {
     { hex = '#dc2626' },
     -- { hex = '#eab308' },
-    -- { hex = '#0ea5e9' },
+    -- { hex = '#0ea5e9' }
   }
 }
+-- --------------------------------------------------
 
 local canvases = {}
 local lastSourceID = nil
@@ -63,7 +65,7 @@ local function draw(colors)
   end
 end
 
--- 清除 Canvas 上的内容
+-- 清除 canvas 上的内容
 local function clear()
   for _, canvas in ipairs(canvases) do
     canvas:delete()
@@ -71,7 +73,7 @@ local function clear()
   canvases = {}
 end
 
--- 更新 Canvas 显示
+-- 更新 canvas 显示
 local function update(sourceID)
   clear()
 

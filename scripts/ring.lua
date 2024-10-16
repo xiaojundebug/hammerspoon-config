@@ -1,5 +1,5 @@
 -- **************************************************
--- 环形 app 启动器
+-- 环形 App 启动器
 -- **************************************************
 -- 使用方式：
 -- 1. 按下 alt + tab 呼出环形菜单，这时候可以松开 tab 键
@@ -21,7 +21,7 @@ local APPLICATIONS = {
   { name = '企业微信', icon = '/Applications/企业微信.app/Contents/Resources/AppIcon.icns' },
   { name = 'Google Chrome', icon = '/Applications/Google Chrome.app/Contents/Resources/app.icns' },
   { name = 'Visual Studio Code', icon = '/Applications/Visual Studio Code.app/Contents/Resources/Code.icns' },
-  { name = 'WebStorm', icon = '/Applications/WebStorm.app/Contents/Resources/webstorm.icns' },
+  { name = 'WebStorm', icon = '/Applications/WebStorm.app/Contents/Resources/webstorm.icns' }
 }
 -- 菜单圆环大小
 local RING_SIZE = 280
@@ -33,8 +33,8 @@ local ICON_SIZE = RING_THICKNESS / 2
 local FOLLOW_MOUSE = true
 -- 颜色配置
 local COLOR_PATTERN = {
-  inactive = { hex = '#18181b' },
-  active = { hex = '#34a853' }
+  inactive = { hex = '#000000' },
+  active = { hex = '#40534c' }
 }
 -- 透明度
 local ALPHA = 1
@@ -56,16 +56,16 @@ function Menu:new(config)
   self.__index = self
 
   self._menus = config.menus
-  self._ringSize = config.ringSize or 360
-  self._ringThickness = config.ringThickness or self._ringSize / 3.75
+  self._ringSize = config.ringSize or 280
+  self._ringThickness = config.ringThickness or self._ringSize / 4
   self._iconSize = config.iconSize or self._ringThickness / 2
   self._canvas = nil
   self._active = nil
-  self._inactiveColor = config.inactiveColor or { hex = '#333333' }
-  self._activeColor = config.activeColor or { hex = '#3b82f6' }
+  self._inactiveColor = config.inactiveColor or { hex = "#000000" }
+  self._activeColor = config.activeColor or { hex = "#40534c" }
   self._alpha = config.alpha or 1
-  self._animated = config.animated or false
-  self._animationDuration = config.animationDuration or 0.5
+  self._animated = config.animated or true
+  self._animationDuration = config.animationDuration or 0.3
 
   local halfRingSize = self._ringSize / 2
   local halfRingThickness = self._ringThickness / 2
@@ -106,10 +106,9 @@ function Menu:new(config)
     startAngle = -halfPieceDeg,
     endAngle = halfPieceDeg,
     strokeWidth = self._ringThickness * 0.9,
-    strokeColor = self._activeColor,
+    strokeColor = { alpha = 0 },
     arcRadii = false
   }
-  indicator.strokeColor.alpha = 0
 
   self._canvas[2] = indicator
 
@@ -139,7 +138,7 @@ function Menu:show()
     local halfRingSize = self._ringSize / 2
     local matrix = hs.canvas.matrix.identity()
 
-    r_cancelAnimation = utils.animate({
+    ring_cancelAnimation = utils.animate({
       duration = self._animationDuration,
       easing = tween.easeOutExpo,
       onProgress = function(progress)
@@ -162,7 +161,7 @@ function Menu:hide()
   self._canvas:hide()
 
   if self._animated then
-    r_cancelAnimation()
+    ring_cancelAnimation()
   end
 end
 
@@ -182,9 +181,9 @@ function Menu:setActive(index)
     if (index) then
       self._canvas[2].startAngle = pieceDeg * (index - 1) - halfPieceDeg
       self._canvas[2].endAngle = pieceDeg * index - halfPieceDeg
-      self._canvas[2].strokeColor.alpha = 1
+      self._canvas[2].strokeColor = self._activeColor
     else
-      self._canvas[2].strokeColor.alpha = 0
+      self._canvas[2].strokeColor = { alpha = 0 }
     end
   end
 end
@@ -265,8 +264,8 @@ local function handleShowMenu()
   menu:show()
 
   -- 菜单显示后开始监听鼠标移动事件
-  r_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, throttledHandleMouseMoved)
-  r_mouseEvtTap:start()
+  ring_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, throttledHandleMouseMoved)
+  ring_mouseEvtTap:start()
 
   -- 初始化触发计算一次
   handleMouseMoved()
@@ -280,7 +279,7 @@ local function handleHideMenu()
 
   menu:hide()
   -- 菜单隐藏后移除监听鼠标移动事件
-  r_mouseEvtTap:stop()
+  ring_mouseEvtTap:stop()
 
   local active = menu:getActive()
 
@@ -325,5 +324,5 @@ local function handleKeyEvent(event)
 end
 
 -- 监听快捷键
-r_keyEvtTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.flagsChanged }, handleKeyEvent)
-r_keyEvtTap:start()
+ring_keyEvtTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.flagsChanged }, handleKeyEvent)
+ring_keyEvtTap:start()

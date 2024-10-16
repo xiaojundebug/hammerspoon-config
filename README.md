@@ -4,13 +4,13 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 
 ## 脚本列表
 
-- [input-method-indicator.lua](./scripts/input-method-indicator.lua) - 给输入法设置一个指示器，这样应用全屏时也能一眼看到你此时的输入法是哪个了，可以取代 [ShowyEdge](https://github.com/pqrs-org/ShowyEdge/)
-- [auto-switch-input-method.lua](./scripts/auto-switch-input-method.lua) - 根据 App 切换对应输入法，再也不用担心把「npm」打成「你配吗」
-- [ring.lua](./scripts/ring.lua) - 环形 app 启动器
-- [caffeinated.lua](./scripts/caffeinated.lua) - 防止屏幕进入休眠
-- [wifi-mute.lua](./scripts/wifi-mute.lua) - 连接到公司 wifi 后自动静音扬声器
+- [auto-switch-input-method.lua](./scripts/auto-switch-input-method.lua) - 根据 App 自动切换输入法，再也不用担心把「npm」打成「你配吗」
+- [input-method-indicator.lua](./scripts/input-method-indicator.lua) - 给输入法设置一个指示器，这样应用全屏时也能一眼看到你此时的输入法是哪个了，可以一定程度上代替 [ShowyEdge](https://github.com/pqrs-org/ShowyEdge/)
+- [caffeine.lua](./scripts/caffeine.lua) - 防止屏幕进入休眠
+- [hush.lua](./scripts/hush.lua) - 连接到公司 Wi-Fi 后自动静音
 - [defeating-paste-blocking.lua](./scripts/defeating-paste-blocking.lua) - 有些网站禁止粘贴，该脚本可以模拟系统输入事件绕过限制
-- [magspeed-smooth-scrolling-fix.lua](./scripts/magspeed-smooth-scrolling-fix.lua) - 罗技无极滚轮鼠标回滚问题尝试性优化
+- [ring.lua](./scripts/ring.lua) - 环形 App 启动器
+- [magspeed-smooth-scrolling-fix.lua](./scripts/magspeed-smooth-scrolling-fix.lua) - 罗技无极滚轮鼠标回滚问题优化
 
 ## 怎么使用
 

@@ -4,10 +4,11 @@
 
 local utils = require('./utils')
 
+-- --------------------------------------------------
 local Pinyin = 'com.apple.inputmethod.SCIM.ITABC'
 local ABC = 'com.apple.keylayout.ABC'
 
--- 定义你自己想要自动切换输入法的 App
+-- 定义你自己想要自动切换输入法的 app
 local APP_TO_IME = {
   ['/Applications/Terminal.app'] = ABC ,
   ['/Applications/iTerm.app'] = ABC,
@@ -19,7 +20,6 @@ local APP_TO_IME = {
   ['/Applications/企业微信.app'] = Pinyin,
   ['/Applications/DingTalk.app'] = Pinyin,
 }
-
 -- --------------------------------------------------
 
 local function updateFocusedAppInputMethod(appObject)
