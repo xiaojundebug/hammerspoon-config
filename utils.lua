@@ -52,7 +52,7 @@ function module.clamp(value, min, max)
   return math.max(math.min(value, max), min)
 end
 
---- 用于 Canvas 过渡效果
+--- 过渡效果工具函数
 -- @param options 参数配置
 --   @field duration 过渡时长
 --   @field easing 缓动函数，函数接受一个真实进度并返回缓动后的进度
