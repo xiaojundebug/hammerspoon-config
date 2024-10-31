@@ -25,5 +25,5 @@ local handleWifiChanged = function()
   end
 end
 
-hush_wifiWatcher = hs.wifi.watcher.new(handleWifiChanged)
-hush_wifiWatcher:start()
+wm_wifiWatcher = hs.wifi.watcher.new(handleWifiChanged)
+wm_wifiWatcher:start()

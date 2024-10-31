@@ -1,7 +1,7 @@
 require('./scripts/auto-switch-input-method')
 require('./scripts/input-method-indicator')
 require('./scripts/caffeine')
-require('./scripts/hush')
+require('./scripts/wifi-mute')
 require('./scripts/defeating-paste-blocking')
 require('./scripts/ring')
 require('./scripts/magspeed-smooth-scrolling-fix')
