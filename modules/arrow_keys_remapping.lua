@@ -16,34 +16,13 @@ local MAPPING = {
 
 hs.loadSpoon('LeftRightHotkey')
 
-local function postKeyEvent(keyCode)
-  hs.eventtap.event.newKeyEvent(keyCode, true):post()
-  hs.eventtap.event.newKeyEvent(keyCode, false):post()
-end
+for targetKey, sourceKey in pairs(MAPPING) do
+  local handler = function()
+    hs.eventtap.event.newKeyEvent(hs.keycodes.map[targetKey], true):post()
+    hs.eventtap.event.newKeyEvent(hs.keycodes.map[targetKey], false):post()
+  end
 
-local function up()
-  postKeyEvent(hs.keycodes.map['up'])
+  spoon.LeftRightHotkey:bind(MODS, sourceKey, handler, nil, handler)
 end
-
-local function down()
-  postKeyEvent(hs.keycodes.map['down'])
-end
-
-local function left()
-  postKeyEvent(hs.keycodes.map['left'])
-end
-
-local function right()
-  postKeyEvent(hs.keycodes.map['right'])
-end
-
-local function bind(key, func)
-  spoon.LeftRightHotkey:bind(MODS, key, func, nil, func)
-end
-
-bind(MAPPING.up, up)
-bind(MAPPING.down, down)
-bind(MAPPING.left, left)
-bind(MAPPING.right, right)
 
 spoon.LeftRightHotkey:start()
