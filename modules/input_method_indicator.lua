@@ -13,7 +13,7 @@ local ALLOW_LINEAR_GRADIENT = false
 local IME_TO_COLORS = {
   -- 系统自带简中输入法
   ['com.apple.inputmethod.SCIM.ITABC'] = {
-    { hex = '#dc2626' },
+    { hex = '#de2910' },
     -- { hex = '#eab308' },
     -- { hex = '#0ea5e9' }
   }
