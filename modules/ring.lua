@@ -29,7 +29,7 @@ local RING_THICKNESS = RING_SIZE / 4
 -- 图标大小
 local ICON_SIZE = RING_THICKNESS / 2
 -- 是否菜单在鼠标指针处弹出，而不是居中
-local FOLLOW_MOUSE = true
+local FOLLOW_POINTER = true
 -- 颜色配置
 local COLOR_PATTERN = {
   inactive = { hex = '#000000' },
@@ -46,10 +46,10 @@ local ANIMATION_DURATION = 0.3
 -- 菜单封装
 -- --------------------------------------------------
 
-local Menu = {}
+local Ring = {}
 
 -- 创建菜单
-function Menu:new(config)
+function Ring:new(config)
   o = {}
   setmetatable(o, self)
   self.__index = self
@@ -58,13 +58,13 @@ function Menu:new(config)
   self._ringSize = config.ringSize or 280
   self._ringThickness = config.ringThickness or self._ringSize / 4
   self._iconSize = config.iconSize or self._ringThickness / 2
-  self._canvas = nil
-  self._active = nil
   self._inactiveColor = config.inactiveColor or { hex = "#000000" }
   self._activeColor = config.activeColor or { hex = "#40534c" }
   self._alpha = config.alpha or 1
   self._animated = config.animated or true
   self._animationDuration = config.animationDuration or 0.3
+  self._canvas = nil
+  self._active = nil
 
   local halfRingSize = self._ringSize / 2
   local halfRingThickness = self._ringThickness / 2
@@ -73,8 +73,8 @@ function Menu:new(config)
   local halfIconSize = self._iconSize / 2
 
   self._canvas = hs.canvas.new({
-    x = config.left or 0,
-    y = config.top or 0,
+    x = 0,
+    y = 0,
     w = self._ringSize,
     h = self._ringSize
   })
@@ -82,7 +82,7 @@ function Menu:new(config)
   self._canvas:alpha(self._alpha)
 
   -- 渲染圆环
-  local ring = {
+  self._canvas[1] = {
     type = 'arc',
     action = 'stroke',
     center = { x = '50%', y = '50%' },
@@ -94,10 +94,8 @@ function Menu:new(config)
     arcRadii = false
   }
 
-  self._canvas[1] = ring
-
   -- 渲染激活项高亮背景
-  local indicator = {
+  self._canvas[2] = {
     type = 'arc',
     action = 'stroke',
     center = { x = '50%', y = '50%' },
@@ -108,8 +106,6 @@ function Menu:new(config)
     strokeColor = { alpha = 0 },
     arcRadii = false
   }
-
-  self._canvas[2] = indicator
 
   -- 渲染 icon
   for key, app in ipairs(self._menus) do
@@ -131,7 +127,7 @@ function Menu:new(config)
 end
 
 -- 显示菜单
-function Menu:show()
+function Ring:show()
   -- 根据配置决定是否开启动画
   if self._animated then
     local halfRingSize = self._ringSize / 2
@@ -156,7 +152,7 @@ function Menu:show()
 end
 
 -- 隐藏菜单
-function Menu:hide()
+function Ring:hide()
   self._canvas:hide()
 
   if self._animated then
@@ -165,12 +161,12 @@ function Menu:hide()
 end
 
 -- 返回菜单是否显示
-function Menu:isShowing()
+function Ring:isShowing()
   return self._canvas:isShowing()
 end
 
 -- 设置菜单激活项
-function Menu:setActive(index)
+function Ring:setActive(index)
   if self._active ~= index then
     self._active = index
 
@@ -188,12 +184,12 @@ function Menu:setActive(index)
 end
 
 -- 获取菜单激活项
-function Menu:getActive()
+function Ring:getActive()
   return self._active
 end
 
--- 设置菜单位置（这里指圆点 x、y 坐标）
-function Menu:setPosition(topLeft)
+-- 设置菜单坐标（指的是圆心坐标）
+function Ring:setPosition(topLeft)
   self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
 end
 
@@ -201,10 +197,9 @@ end
 -- 菜单调用以及事件监听处理
 -- --------------------------------------------------
 
--- 保存菜单弹出时鼠标的位置
-local menuPos = nil
+local ringPos = nil
 
-local menu = Menu:new({
+local ring = Ring:new({
   menus = APPLICATIONS,
   ringSize = RING_SIZE,
   ringThickness = RING_THICKNESS,
@@ -221,8 +216,8 @@ local function handleMouseMoved()
   local mousePos = hs.mouse.absolutePosition()
 
   -- 鼠标指针与中心点的距离
-  local distance = math.sqrt(math.abs(mousePos.x - menuPos.x)^2 + math.abs(mousePos.y - menuPos.y)^2)
-  local rad = math.atan2(mousePos.y - menuPos.y, mousePos.x - menuPos.x)
+  local distance = math.sqrt(math.abs(mousePos.x - ringPos.x)^2 + math.abs(mousePos.y - ringPos.y)^2)
+  local rad = math.atan2(mousePos.y - ringPos.y, mousePos.x - ringPos.x)
   local deg = math.deg(rad)
   -- 转为 0 - 360
   deg = (deg + 90 + 360 / #APPLICATIONS / 2) % 360
@@ -233,34 +228,34 @@ local function handleMouseMoved()
     active = nil
   end
 
-  menu:setActive(active)
+  ring:setActive(active)
 end
 -- 貌似也并没节省到性能，throttle 一下图心理安慰
 local throttledHandleMouseMoved = utils.throttle(handleMouseMoved, 1 / 60)
 
 -- 显示逻辑处理
-local function handleShowMenu()
-  if menu:isShowing() then
+local function handleShowRing()
+  if ring:isShowing() then
     return
   end
 
   local frame = hs.mouse.getCurrentScreen():fullFrame()
 
-  if FOLLOW_MOUSE then
+  if FOLLOW_POINTER then
     local mousePos = hs.mouse.absolutePosition()
-    menuPos = {
+    ringPos = {
       x = utils.clamp(mousePos.x, frame.x + RING_SIZE / 2, frame.x + frame.w - RING_SIZE / 2),
       y = utils.clamp(mousePos.y, frame.y + RING_SIZE / 2, frame.y + frame.h - RING_SIZE / 2)
     }
   else
-    menuPos = {
+    ringPos = {
       x = (frame.x + frame.w) / 2,
       y = (frame.y + frame.h) / 2
     }
   end
 
-  menu:setPosition(menuPos)
-  menu:show()
+  ring:setPosition(ringPos)
+  ring:show()
 
   -- 菜单显示后开始监听鼠标移动事件
   ring_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, throttledHandleMouseMoved)
@@ -271,16 +266,16 @@ local function handleShowMenu()
 end
 
 -- 隐藏逻辑处理
-local function handleHideMenu()
-  if not menu:isShowing() then
+local function handleHideRing()
+  if not ring:isShowing() then
     return
   end
 
-  menu:hide()
+  ring:hide()
   -- 菜单隐藏后移除监听鼠标移动事件
   ring_mouseEvtTap:stop()
 
-  local active = menu:getActive()
+  local active = ring:getActive()
 
   if active then
     local onActive = APPLICATIONS[active].onActive
@@ -288,7 +283,7 @@ local function handleHideMenu()
     if onActive then
       onActive()
     else
-      hs.application.launchOrFocus(APPLICATIONS[menu:getActive()].name)
+      hs.application.launchOrFocus(APPLICATIONS[ring:getActive()].name)
     end
   end
 end
@@ -305,8 +300,8 @@ local function handleKeyEvent(event)
     keyCode == hs.keycodes.map.tab and
     isAltDown
   then
-    handleShowMenu()
-    -- 阻止事件传递，否则可能会导致 UI 焦点切换，因为按下了 tab 键
+    handleShowRing()
+    -- 阻止事件传递
     return true
   end
 
@@ -316,7 +311,7 @@ local function handleKeyEvent(event)
     keyCode == hs.keycodes.map.alt and
     not isAltDown
   then
-    handleHideMenu()
+    handleHideRing()
   end
 
   return false
