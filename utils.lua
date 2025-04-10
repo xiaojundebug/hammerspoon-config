@@ -88,7 +88,7 @@ function module.animate(options)
   return function()
     if timer then
       timer:stop()
-      onEnd()
+      timer = nil
     end
   end
 end

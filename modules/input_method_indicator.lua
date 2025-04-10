@@ -4,7 +4,7 @@
 
 -- --------------------------------------------------
 -- 指示器高度
-local HEIHGT = 5
+local HEIGHT = 3
 -- 指示器透明度
 local ALPHA = 1
 -- 多个颜色之间线性渐变
@@ -14,8 +14,8 @@ local IME_TO_COLORS = {
   -- 系统自带简中输入法
   ['com.apple.inputmethod.SCIM.ITABC'] = {
     { hex = '#de2910' },
-    -- { hex = '#eab308' },
-    -- { hex = '#0ea5e9' }
+    { hex = '#eab308' },
+    { hex = '#0ea5e9' }
   }
 }
 -- --------------------------------------------------
@@ -29,8 +29,12 @@ local function draw(colors)
 
   for i, screen in ipairs(screens) do
     local frame = screen:fullFrame()
+    local canvasX = frame.x + frame.w - 128
+    local canvasY = frame.y
+    local canvasW = 128
+    local canvasH = HEIGHT
 
-    local canvas = hs.canvas.new({ x = frame.x, y = frame.y, w = frame.w, h = HEIHGT })
+    local canvas = hs.canvas.new({ x = canvasX, y = canvasY, w = canvasW, h = canvasH })
     canvas:level(hs.canvas.windowLevels.overlay)
     canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
     canvas:alpha(ALPHA)
@@ -41,11 +45,11 @@ local function draw(colors)
         action = 'fill',
         fillGradient = 'linear',
         fillGradientColors = colors,
-        frame = { x = 0, y = 0, w = frame.w, h = HEIHGT }
+        frame = { x = 0, y = 0, w = canvasW, h = canvasH }
       }
       canvas[1] = rect
     else
-      local cellW = frame.w / #colors
+      local cellW = canvasW / #colors
 
       for j, color in ipairs(colors) do
         local startX = (j - 1) * cellW
@@ -54,7 +58,7 @@ local function draw(colors)
           type = 'rectangle',
           action = 'fill',
           fillColor = color,
-          frame = { x = startX, y = startY, w = cellW, h = HEIHGT }
+          frame = { x = startX, y = startY, w = cellW, h = canvasH }
         }
         canvas[j] = rect
       end
