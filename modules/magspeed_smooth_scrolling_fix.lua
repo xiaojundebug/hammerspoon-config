@@ -37,7 +37,7 @@ local function handleScrollWheel(event)
   local deltaY = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis1)
   local deltaX = event:getProperty(hs.eventtap.event.properties.scrollWheelEventPointDeltaAxis2)
 
-  -- 不对内置触摸板进行处理，测试发现触摸板该值为 0，可以作为判定依据
+  -- 不对内置触摸板进行处理，经测试发现触摸板 sourceGroupID 为 0，可以作为判定依据
   if sourceGroupID == 0 or (deltaY == 0 and deltaX == 0) then
     return false
   end

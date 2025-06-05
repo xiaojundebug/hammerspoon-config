@@ -20,6 +20,7 @@ local APPLICATIONS = {
   { name = '企业微信', icon = '/Applications/企业微信.app/Contents/Resources/AppIcon.icns' },
   { name = 'Google Chrome', icon = '/Applications/Google Chrome.app/Contents/Resources/app.icns' },
   { name = 'Visual Studio Code', icon = '/Applications/Visual Studio Code.app/Contents/Resources/Code.icns' },
+  { name = 'Spotify', icon = '/Applications/Spotify.app/Contents/Resources/Icon.icns' },
   -- { name = 'WebStorm', icon = '/Applications/WebStorm.app/Contents/Resources/webstorm.icns' }
 }
 -- 菜单圆环大小
@@ -33,7 +34,7 @@ local FOLLOW_POINTER = true
 -- 颜色配置
 local COLOR_PATTERN = {
   inactive = { hex = '#000000' },
-  active = { hex = '#45556c' }
+  active = { hex = '#393e46' }
 }
 -- 透明度
 local ALPHA = 1
