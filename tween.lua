@@ -1,7 +1,7 @@
-local module = {}
+local Tween = {}
 
-function module.easeOutExpo(t)
+function Tween.easeOutExpo(t)
   return t == 1 and 1 or 1 - math.pow(2, -10 * t)
 end
 
-return module
+return Tween

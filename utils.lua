@@ -1,8 +1,8 @@
-local module = {}
+local Utils = {}
 
 function noop() end
 
-function module.debounce(func, delay)
+function Utils.debounce(func, delay)
   local timer = nil
 
   return function(...)
@@ -19,7 +19,7 @@ function module.debounce(func, delay)
   end
 end
 
-function module.throttle(func, delay)
+function Utils.throttle(func, delay)
   local wait = false
   local storedArgs = nil
   local timer = nil
@@ -48,7 +48,7 @@ function module.throttle(func, delay)
   end
 end
 
-function module.clamp(value, min, max)
+function Utils.clamp(value, min, max)
   return math.max(math.min(value, max), min)
 end
 
@@ -59,7 +59,7 @@ end
 --   @field onProgress 过渡时触发
 --   @field onEnd 过渡结束后触发
 -- @return 用于取消过渡的函数
-function module.animate(options)
+function Utils.animate(options)
   local duration = options.duration
   local easing = options.easing
   local onProgress = options.onProgress
@@ -93,4 +93,4 @@ function module.animate(options)
   end
 end
 
-return module
+return Utils

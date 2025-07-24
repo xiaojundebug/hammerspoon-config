@@ -8,11 +8,11 @@ local HEIGHT = 4
 -- 指示器透明度
 local ALPHA = 1
 -- 多个颜色之间线性渐变
-local ALLOW_LINEAR_GRADIENT = false
+local ENABLE_COLOR_GRADIENT = false
 -- 指示器颜色
 local IME_TO_COLORS = {
-  -- 系统自带简中输入法
-  ['com.apple.inputmethod.SCIM.ITABC'] = {
+  -- 微信输入法
+  ['com.tencent.inputmethod.wetype.pinyin'] = {
     { hex = '#de2910' },
     { hex = '#eab308' },
     { hex = '#0ea5e9' }
@@ -39,7 +39,7 @@ local function draw(colors)
     canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
     canvas:alpha(ALPHA)
 
-    if ALLOW_LINEAR_GRADIENT and #colors > 1 then
+    if ENABLE_COLOR_GRADIENT and #colors > 1 then
       local rect = {
         type = 'rectangle',
         action = 'fill',
