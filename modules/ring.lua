@@ -62,21 +62,22 @@ function Ring:new(config)
   self._ringThickness = config.ringThickness or self._ringSize / 4
   self._iconSize = config.iconSize or self._ringThickness / 2
   self._inactiveColor = config.inactiveColor or { hex = "#000000" }
-  self._activeColor = config.activeColor or { hex = "#40534c" }
+  self._activeColor = config.activeColor or { hex = "#393e46" }
   self._alpha = config.alpha or 1
   self._animated = config.animated
   self._animationDuration = config.animationDuration or 0.3
+
+  self._halfRingSize = self._ringSize / 2
+  self._halfRingThickness = self._ringThickness / 2
+  self._halfIconSize = self._iconSize / 2
+  self._sliceDeg = 360 / #self._items
+  self._halfSliceDeg = self._sliceDeg / 2
+
   self._canvas = nil
   self._active = nil
-
   self._cancelAnimation = nil
 
-  local halfRingSize = self._ringSize / 2
-  local halfRingThickness = self._ringThickness / 2
-  local pieceDeg = 360 / #self._items
-  local halfPieceDeg = pieceDeg / 2
-  local halfIconSize = self._iconSize / 2
-
+  -- 初始化 canvas
   self._canvas = hs.canvas.new({
     x = 0,
     y = 0,
@@ -91,7 +92,7 @@ function Ring:new(config)
     type = 'arc',
     action = 'stroke',
     center = { x = '50%', y = '50%' },
-    radius = halfRingSize - halfRingThickness,
+    radius = self._halfRingSize - self._halfRingThickness,
     startAngle = 0,
     endAngle = 360,
     strokeWidth = self._ringThickness,
@@ -99,14 +100,14 @@ function Ring:new(config)
     arcRadii = false
   }
 
-  -- 渲染激活项高亮背景
+  -- 渲染指示器
   self._canvas[2] = {
     type = 'arc',
     action = 'stroke',
     center = { x = '50%', y = '50%' },
-    radius = halfRingSize - halfRingThickness,
-    startAngle = -halfPieceDeg,
-    endAngle = halfPieceDeg,
+    radius = self._halfRingSize - self._halfRingThickness,
+    startAngle = -self._halfSliceDeg,
+    endAngle = self._halfSliceDeg,
     strokeWidth = self._ringThickness * 0.9,
     strokeColor = { alpha = 0 },
     arcRadii = false
@@ -115,11 +116,12 @@ function Ring:new(config)
   -- 渲染 icon
   for key, app in ipairs(self._items) do
     local image = hs.image.imageFromPath(app.icon)
-    local rad = math.rad(pieceDeg * (key - 1) - 90)
+    -- 此处减掉 90 是为了让第一个菜单从十二点钟方向开始渲染（弧度 0 处于三点钟方向）
+    local rad = math.rad(self._sliceDeg * (key - 1) - 90)
 
-    local length = halfRingSize - halfRingThickness
-    local x = length * math.cos(rad) + halfRingSize - halfIconSize
-    local y = length * math.sin(rad) + halfRingSize - halfIconSize
+    local length = self._halfRingSize - self._halfRingThickness
+    local x = length * math.cos(rad) + self._halfRingSize - self._halfIconSize
+    local y = length * math.sin(rad) + self._halfRingSize - self._halfIconSize
 
     self._canvas[key + 2] = {
       type = "image",
@@ -137,7 +139,6 @@ function Ring:show()
 
   -- 根据配置决定是否开启动画
   if self._animated then
-    local halfRingSize = self._ringSize / 2
     local matrix = hs.canvas.matrix.identity()
 
     self._cancelAnimation = utils.animate({
@@ -146,9 +147,9 @@ function Ring:show()
       onProgress = function(progress)
         self._canvas:transformation(
           matrix
-            :translate(halfRingSize, halfRingSize)
+            :translate(self._halfRingSize, self._halfRingSize)
             :scale((0.1 * progress) + 0.9)
-            :translate(-halfRingSize, -halfRingSize)
+            :translate(-self._halfRingSize, -self._halfRingSize)
         )
         self._canvas:alpha(self._alpha * progress)
       end
@@ -160,8 +161,9 @@ end
 function Ring:hide()
   self._canvas:hide()
 
-  if self._animated then
+  if self._cancelAnimation then
     self._cancelAnimation()
+    self._cancelAnimation = nil
   end
 end
 
@@ -175,13 +177,11 @@ function Ring:setActive(index)
   if self._active ~= index then
     self._active = index
 
-    local pieceDeg = 360 / #self._items
-    local halfPieceDeg = pieceDeg / 2
     local indicator = self._canvas[2]
 
     if (index) then
-      indicator.startAngle = pieceDeg * (index - 1) - halfPieceDeg
-      indicator.endAngle = pieceDeg * index - halfPieceDeg
+      indicator.startAngle = self._sliceDeg * (index - 1) - self._halfSliceDeg
+      indicator.endAngle = self._sliceDeg * index - self._halfSliceDeg
       indicator.strokeColor = self._activeColor
     else
       indicator.strokeColor = { alpha = 0 }
@@ -222,16 +222,19 @@ local function handleMouseMoved()
   local mousePos = hs.mouse.absolutePosition()
 
   -- 鼠标指针与中心点的距离
-  local distance = math.sqrt(math.abs(mousePos.x - ringPos.x)^2 + math.abs(mousePos.y - ringPos.y)^2)
-  local rad = math.atan2(mousePos.y - ringPos.y, mousePos.x - ringPos.x)
-  local deg = math.deg(rad)
-  -- 转为 0 - 360
-  deg = (deg + 90 + 360 / #APPLICATIONS / 2) % 360
+  local distance = math.sqrt((mousePos.x - ringPos.x)^2 + (mousePos.y - ringPos.y)^2)
+  local active = nil
 
-  local active = math.ceil(deg / (360 / #APPLICATIONS))
   -- 在中心空洞中不激活菜单
-  if distance <= RING_SIZE / 2 - RING_THICKNESS then
-    active = nil
+  if distance > RING_SIZE / 2 - RING_THICKNESS then
+    local sliceDeg = 360 / #APPLICATIONS
+    local halfSliceDeg = sliceDeg / 2
+    local rad = math.atan2(mousePos.y - ringPos.y, mousePos.x - ringPos.x)
+    -- 弧度转角度，0 - 2π -> -180 - 180
+    local deg = math.deg(rad)
+    -- 由于第一个菜单在十二点钟方向，所以再次调整角度，并且转换成 0 - 360
+    deg = (deg + 90 + halfSliceDeg) % 360
+    active = math.floor(deg / sliceDeg) + 1
   end
 
   ring:setActive(active)
@@ -288,13 +291,7 @@ local function handleHideRing()
   local active = ring:getActive()
 
   if active then
-    local onActive = APPLICATIONS[active].onActive
-    -- 如果菜单项中配置了 onActive，则执行自定义行为，否则作为程序打开
-    if onActive then
-      onActive()
-    else
-      hs.application.launchOrFocus(APPLICATIONS[ring:getActive()].name)
-    end
+    hs.application.launchOrFocus(APPLICATIONS[ring:getActive()].name)
   end
 end
 
