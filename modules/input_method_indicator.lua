@@ -4,7 +4,7 @@
 
 -- --------------------------------------------------
 -- 指示器高度
-local HEIGHT = 4
+local HEIGHT = 6
 -- 指示器透明度
 local ALPHA = 1
 -- 多个颜色之间线性渐变
@@ -14,8 +14,8 @@ local IME_TO_COLORS = {
   -- 微信输入法
   ['com.tencent.inputmethod.wetype.pinyin'] = {
     { hex = '#de2910' },
-    { hex = '#eab308' },
-    { hex = '#0ea5e9' }
+    -- { hex = '#eab308' },
+    -- { hex = '#0ea5e9' }
   }
 }
 -- --------------------------------------------------
