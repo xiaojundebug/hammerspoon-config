@@ -5,325 +5,475 @@
 -- 1. 按下 alt + tab 呼出环形菜单，这时候可以松开 tab 键
 -- 2. 滑动鼠标选中目标 app 后松开 alt 键跳到目标 app
 -- **************************************************
+-- ## 架构
+-- Geometry   —— 纯几何计算，无副作用（图标坐标、扇区角度、命中检测）
+-- View       —— 只负责 canvas 渲染，不感知 app / 鼠标
+-- Controller —— 状态机 + 事件监听，串起 Geometry 与 View
+-- **************************************************
 
 local utils = require('./utils')
 local tween = require('./tween')
 
 -- --------------------------------------------------
--- 自定义配置
+-- 配置（唯一来源）
 -- --------------------------------------------------
 
--- 菜单项配置
-local APPLICATIONS = {
-  { name = 'QQ', icon = '/Applications/QQ.app/Contents/Resources/icon.icns' },
-  { name = 'WeChat', icon = '/Applications/WeChat.app/Contents/Resources/AppIcon.icns' },
-  { name = '企业微信', icon = '/Applications/企业微信.app/Contents/Resources/AppIcon.icns' },
-  { name = 'Google Chrome', icon = '/Applications/Google Chrome.app/Contents/Resources/app.icns' },
-  { name = 'Visual Studio Code', icon = '/Applications/Visual Studio Code.app/Contents/Resources/Code.icns' },
-  { name = 'Spotify', icon = '/Applications/Spotify.app/Contents/Resources/AppIcon.icns' },
-  -- { name = 'WebStorm', icon = '/Applications/WebStorm.app/Contents/Resources/webstorm.icns' }
+local CONFIG = {
+  -- 菜单项
+  applications = {
+    { name = 'QQ', icon = '/Applications/QQ.app/Contents/Resources/icon.icns' },
+    { name = 'WeChat', icon = '/Applications/WeChat.app/Contents/Resources/AppIcon.icns' },
+    { name = '企业微信', icon = '/Applications/企业微信.app/Contents/Resources/AppIcon.icns' },
+    { name = 'Google Chrome', icon = '/Applications/Google Chrome.app/Contents/Resources/app.icns' },
+    { name = 'Visual Studio Code', icon = '/Applications/Visual Studio Code.app/Contents/Resources/Code.icns' },
+    { name = 'SnippetsLab', icon = '/Applications/SnippetsLab.app/Contents/Resources/AppIcon.icns' },
+  },
+
+  -- 尺寸
+  ringSize = 280,         -- 圆环外径
+  ringThickness = nil,    -- 圆环粗细，留空默认 ringSize / 4
+  iconSize = nil,         -- 图标大小，留空默认 ringThickness / 2
+
+  -- 行为
+  followPointer = true,   -- 在鼠标指针处弹出（false 则屏幕居中）
+  tabToPick = false,      -- 是否允许按 tab 键循环选择
+
+  -- 颜色（实色）
+  ringColor = { hex = '#1C1C1E' },   -- 圆环
+  centerColor = { hex = '#0E0E10' }, -- 中心
+  activeColor = { hex = '#FF7A45' }, -- 选中扇区
+
+  -- 选中图标放大倍数（设为 1 可关闭）
+  iconActiveScale = 1.15,
+
+  -- 中心标签
+  showLabel = true,
+  labelColor = { hex = '#FAFAF7' },
+  labelSize = 14,
+  labelFont = '.AppleSystemUIFontRounded', -- SF Rounded
+
+  -- 弹出动画
+  animated = true,
+  animationDuration = 0.3,
 }
--- 菜单圆环大小
-local RING_SIZE = 280
--- 菜单圆环粗细
-local RING_THICKNESS = RING_SIZE / 4
--- 图标大小
-local ICON_SIZE = RING_THICKNESS / 2
--- 是否菜单在鼠标指针处弹出，而不是居中
-local FOLLOW_POINTER = true
--- 颜色配置
-local COLOR_PATTERN = {
-  inactive = { hex = '#000000' },
-  active = { hex = '#393e46' }
-}
--- 透明度
-local ALPHA = 1
--- 是否展示动画
-local ANIMATED = true
--- 动画时长
-local ANIMATION_DURATION = 0.3
--- 是否允许按 tab 键进行选择
-local TAB_TO_PICK = false
 
 -- --------------------------------------------------
--- 菜单封装
+-- Geometry —— 纯几何计算
 -- --------------------------------------------------
 
-local Ring = {}
+local Geometry = {}
+Geometry.__index = Geometry
 
--- 创建菜单
-function Ring:new(config)
-  local obj = {}
-  setmetatable(obj, self)
-  self.__index = self
+function Geometry.new(opts)
+  local self = setmetatable({}, Geometry)
 
-  self._items = config.items
-  self._ringSize = config.ringSize or 280
-  self._ringThickness = config.ringThickness or self._ringSize / 4
-  self._iconSize = config.iconSize or self._ringThickness / 2
-  self._inactiveColor = config.inactiveColor or { hex = "#000000" }
-  self._activeColor = config.activeColor or { hex = "#393e46" }
-  self._alpha = config.alpha or 1
-  self._animated = config.animated
-  self._animationDuration = config.animationDuration or 0.3
+  self.ringSize = opts.ringSize
+  self.thickness = opts.thickness or self.ringSize / 4
+  self.iconSize = opts.iconSize or self.thickness / 2
+  self.count = opts.count
 
-  self._halfRingSize = self._ringSize / 2
-  self._halfRingThickness = self._ringThickness / 2
-  self._halfIconSize = self._iconSize / 2
-  self._sliceDeg = 360 / #self._items
-  self._halfSliceDeg = self._sliceDeg / 2
+  self.center = self.ringSize / 2
+  self.ringRadius = self.ringSize / 2
+  -- 圆环描边的中心线半径（图标与指示弧都落在这条线上）
+  self.centerRadius = self.ringRadius - self.thickness / 2
+  -- 中心空洞半径（命中检测阈值 + 中心盘半径）
+  self.innerRadius = self.ringRadius - self.thickness
+  self.sliceDeg = 360 / self.count
+  self.halfSliceDeg = self.sliceDeg / 2
 
-  self._canvas = nil
-  self._active = nil
-  self._cancelAnimation = nil
+  return self
+end
 
-  -- 初始化 canvas
-  self._canvas = hs.canvas.new({
-    x = 0,
-    y = 0,
-    w = self._ringSize,
-    h = self._ringSize
-  })
-  self._canvas:level(hs.canvas.windowLevels.overlay)
-  self._canvas:alpha(self._alpha)
+-- 第 index 个图标在 canvas 内的 frame，scale 用于选中放大
+-- 减 90° 是为了让第一项从十二点钟方向开始（标准弧度 0 在三点钟方向）
+function Geometry:iconFrame(index, scale)
+  local size = self.iconSize * (scale or 1)
+  local rad = math.rad(self.sliceDeg * (index - 1) - 90)
+  local cx = self.centerRadius * math.cos(rad) + self.center
+  local cy = self.centerRadius * math.sin(rad) + self.center
+  local half = size / 2
+  return { x = cx - half, y = cy - half, w = size, h = size }
+end
 
-  -- 渲染圆环
-  self._canvas[1] = {
-    type = 'arc',
-    action = 'stroke',
+-- 第 index 个扇区指示弧的起止角度（canvas 弧度系：0 在十二点，顺时针）
+function Geometry:sliceAngles(index)
+  return self.sliceDeg * (index - 1) - self.halfSliceDeg,
+         self.sliceDeg * index - self.halfSliceDeg
+end
+
+-- 命中检测：传入相对圆心的偏移，返回扇区序号，落在中心空洞返回 nil
+function Geometry:hitTest(dx, dy)
+  if dx * dx + dy * dy <= self.innerRadius * self.innerRadius then
+    return nil
+  end
+  -- 弧度 -> 角度（-180~180），再补偿到「十二点起、0~360」
+  local deg = (math.deg(math.atan(dy, dx)) + 90 + self.halfSliceDeg) % 360
+  return math.floor(deg / self.sliceDeg) + 1
+end
+
+-- --------------------------------------------------
+-- View —— canvas 渲染
+-- --------------------------------------------------
+
+-- 固定图层序号
+local LAYER_RING = 1    -- 圆环底盘
+local LAYER_CENTER = 2  -- 中心盘
+local LAYER_ACTIVE = 3  -- 选中扇区
+local LAYER_ICON = 3    -- 图标从 LAYER_ICON + index 开始
+
+local View = {}
+View.__index = View
+
+function View.new(geo, opts)
+  local self = setmetatable({}, View)
+
+  self.geo = geo
+  self.animated = opts.animated
+  self.animationDuration = opts.animationDuration or 0.3
+
+  self.activeColor = opts.activeColor or { hex = '#FF7A45' }
+  self.iconActiveScale = opts.iconActiveScale or 1.15
+
+  self.showLabel = opts.showLabel ~= false
+  self.labelColor = opts.labelColor or { hex = '#FAFAF7' }
+  self.labelFont = opts.labelFont or '.AppleSystemUIFontRounded'
+  self.labelSize = opts.labelSize or 14
+  -- 标签宽度控制在中心盘内，避免压到圆环上
+  self.labelWidth = geo.innerRadius * 1.9
+
+  self.active = nil
+  self.cancelAnimation = nil
+  self.count = 0
+  self.labels = {}
+  self.labelIndex = nil
+
+  local size = geo.ringSize
+  local canvas = hs.canvas.new({ x = 0, y = 0, w = size, h = size })
+  canvas:level(hs.canvas.windowLevels.overlay)
+
+  -- 圆环底盘
+  canvas[LAYER_RING] = {
+    type = 'circle',
     center = { x = '50%', y = '50%' },
-    radius = self._halfRingSize - self._halfRingThickness,
-    startAngle = 0,
-    endAngle = 360,
-    strokeWidth = self._ringThickness,
-    strokeColor = self._inactiveColor,
-    arcRadii = false
+    radius = geo.ringRadius,
+    action = 'fill',
+    fillColor = opts.ringColor or { hex = '#1C1C1E' },
   }
 
-  -- 渲染指示器
-  self._canvas[2] = {
-    type = 'arc',
-    action = 'stroke',
+  -- 中心盘（盖住圆环中部，形成「环」+ 承托文字）
+  canvas[LAYER_CENTER] = {
+    type = 'circle',
     center = { x = '50%', y = '50%' },
-    radius = self._halfRingSize - self._halfRingThickness,
-    startAngle = -self._halfSliceDeg,
-    endAngle = self._halfSliceDeg,
-    strokeWidth = self._ringThickness * 0.9,
-    strokeColor = { alpha = 0 },
-    arcRadii = false
+    radius = geo.innerRadius,
+    action = 'fill',
+    fillColor = opts.centerColor or { hex = '#0E0E10' },
   }
 
-  -- 渲染 icon
-  for key, app in ipairs(self._items) do
-    local image = hs.image.imageFromPath(app.icon)
-    -- 此处减掉 90 是为了让第一个菜单从十二点钟方向开始渲染（弧度 0 处于三点钟方向）
-    local rad = math.rad(self._sliceDeg * (key - 1) - 90)
+  -- 选中扇区
+  canvas[LAYER_ACTIVE] = {
+    type = 'arc',
+    center = { x = '50%', y = '50%' },
+    radius = geo.centerRadius,
+    action = 'stroke',
+    startAngle = -geo.halfSliceDeg,
+    endAngle = geo.halfSliceDeg,
+    strokeWidth = geo.thickness * 0.9,
+    strokeColor = self.activeColor,
+    arcRadii = false,
+  }
 
-    local length = self._halfRingSize - self._halfRingThickness
-    local x = length * math.cos(rad) + self._halfRingSize - self._halfIconSize
-    local y = length * math.sin(rad) + self._halfRingSize - self._halfIconSize
+  self.canvas = canvas
+  return self
+end
 
-    self._canvas[key + 2] = {
-      type = "image",
-      image = image,
-      frame = { x = x , y = y, h = self._iconSize, w = self._iconSize }
+-- 渲染图标（image 已由 Controller 预加载）与中心标签
+function View:renderIcons(items)
+  self.count = #items
+  self.labels = {}
+
+  for i, item in ipairs(items) do
+    self.labels[i] = item.name
+    self.canvas[LAYER_ICON + i] = {
+      type = 'image',
+      image = item.image,
+      frame = self.geo:iconFrame(i),
     }
   end
 
-  return obj
+  -- 中心标签居于最上层
+  if self.showLabel then
+    self.labelIndex = LAYER_ICON + self.count + 1
+    self.canvas[self.labelIndex] = {
+      type = 'text',
+      text = '',
+      textFont = self.labelFont,
+      textSize = self.labelSize,
+      textColor = self.labelColor,
+      textAlignment = 'center',
+      textLineBreak = 'truncateTail',
+      frame = { x = 0, y = 0, w = self.labelWidth, h = self.labelSize },
+    }
+  end
+
+  self:reset()
 end
 
--- 显示菜单
-function Ring:show()
-  self._canvas:show()
+-- 设置中心标签文字并垂直居中
+-- text 元素在 frame 内是顶部对齐的，所以按文本真实高度定 frame 高度再居中
+function View:setLabel(text)
+  if not self.labelIndex then
+    return
+  end
 
-  -- 根据配置决定是否开启动画
-  if self._animated then
-    local matrix = hs.canvas.matrix.identity()
+  self.canvas[self.labelIndex].text = text or ''
 
-    self._cancelAnimation = utils.animate({
-      duration = self._animationDuration,
-      easing = tween.easeOutExpo,
-      onProgress = function(progress)
-        self._canvas:transformation(
-          matrix
-            :translate(self._halfRingSize, self._halfRingSize)
-            :scale((0.1 * progress) + 0.9)
-            :translate(-self._halfRingSize, -self._halfRingSize)
-        )
-        self._canvas:alpha(self._alpha * progress)
-      end
-    })
+  if text and text ~= '' then
+    local g = self.geo
+    local measured = self.canvas:minimumTextSize(self.labelIndex, text)
+    local h = measured and measured.h or self.labelSize
+    self.canvas[self.labelIndex].frame = {
+      x = g.center - self.labelWidth / 2,
+      y = g.center - h / 2,
+      w = self.labelWidth,
+      h = h,
+    }
   end
 end
 
--- 隐藏菜单
-function Ring:hide()
-  self._canvas:hide()
+-- 回到无选中的初始状态
+function View:reset()
+  self.active = nil
+  self.canvas[LAYER_ACTIVE].strokeColor = { alpha = 0 }
 
-  if self._cancelAnimation then
-    self._cancelAnimation()
-    self._cancelAnimation = nil
+  for i = 1, self.count do
+    self.canvas[LAYER_ICON + i].frame = self.geo:iconFrame(i)
   end
+
+  self:setLabel('')
 end
 
--- 返回菜单是否显示
-function Ring:isShowing()
-  return self._canvas:isShowing()
-end
-
--- 设置菜单激活项
-function Ring:setActive(index)
-  if self._active ~= index then
-    self._active = index
-
-    local indicator = self._canvas[2]
-
-    if (index) then
-      indicator.startAngle = self._sliceDeg * (index - 1) - self._halfSliceDeg
-      indicator.endAngle = self._sliceDeg * index - self._halfSliceDeg
-      indicator.strokeColor = self._activeColor
-    else
-      indicator.strokeColor = { alpha = 0 }
-    end
+-- 高亮指定扇区，nil 表示取消高亮
+function View:highlight(index)
+  if self.active == index then
+    return
   end
+  self.active = index
+
+  -- 选中扇区
+  if index then
+    local startAngle, endAngle = self.geo:sliceAngles(index)
+    self.canvas[LAYER_ACTIVE].startAngle = startAngle
+    self.canvas[LAYER_ACTIVE].endAngle = endAngle
+    self.canvas[LAYER_ACTIVE].strokeColor = self.activeColor
+  else
+    self.canvas[LAYER_ACTIVE].strokeColor = { alpha = 0 }
+  end
+
+  -- 选中图标放大，其余复原
+  for i = 1, self.count do
+    local scale = (i == index) and self.iconActiveScale or 1
+    self.canvas[LAYER_ICON + i].frame = self.geo:iconFrame(i, scale)
+  end
+
+  -- 中心标签
+  self:setLabel(index and self.labels[index] or '')
 end
 
--- 获取菜单激活项
-function Ring:getActive()
-  return self._active
+function View:getActive()
+  return self.active
 end
 
--- 设置菜单坐标（指的是圆心坐标）
-function Ring:setPosition(topLeft)
-  self._canvas:topLeft({ x = topLeft.x - self._ringSize / 2, y = topLeft.y - self._ringSize / 2 })
+-- center 为圆心屏幕坐标
+function View:moveTo(center)
+  local half = self.geo.center
+  self.canvas:topLeft({ x = center.x - half, y = center.y - half })
+end
+
+function View:isShowing()
+  return self.canvas:isShowing()
+end
+
+function View:show()
+  self.canvas:show()
+
+  if not self.animated then
+    return
+  end
+
+  local matrix = hs.canvas.matrix.identity()
+  local c = self.geo.center
+
+  self.cancelAnimation = utils.animate({
+    duration = self.animationDuration,
+    easing = tween.easeOutExpo,
+    onProgress = function(progress)
+      self.canvas:transformation(
+        matrix
+          :translate(c, c)
+          :scale((0.1 * progress) + 0.9)
+          :translate(-c, -c)
+      )
+      self.canvas:alpha(progress)
+    end,
+  })
+end
+
+function View:hide()
+  self.canvas:hide()
+
+  if self.cancelAnimation then
+    self.cancelAnimation()
+    self.cancelAnimation = nil
+  end
+
+  -- 复位，保证下次 show 从干净状态开始
+  self.canvas:transformation(hs.canvas.matrix.identity())
+  self.canvas:alpha(1)
+  self:reset()
 end
 
 -- --------------------------------------------------
--- 菜单调用以及事件监听处理
+-- Controller —— 状态机 + 事件监听
 -- --------------------------------------------------
 
-local ringPos = nil
+local Controller = {}
+Controller.__index = Controller
 
-local ring = Ring:new({
-  items = APPLICATIONS,
-  ringSize = RING_SIZE,
-  ringThickness = RING_THICKNESS,
-  iconSize = ICON_SIZE,
-  inactiveColor = COLOR_PATTERN.inactive,
-  activeColor = COLOR_PATTERN.active,
-  alpha = ALPHA,
-  animated = ANIMATED,
-  animationDuration = ANIMATION_DURATION,
-})
+function Controller.new(config)
+  local self = setmetatable({}, Controller)
 
--- 处理鼠标移动事件
-local function handleMouseMoved()
-  local mousePos = hs.mouse.absolutePosition()
+  self.items = config.applications
+  self.followPointer = config.followPointer
+  self.tabToPick = config.tabToPick
+  self.center = nil
 
-  -- 鼠标指针与中心点的距离
-  local distance = math.sqrt((mousePos.x - ringPos.x)^2 + (mousePos.y - ringPos.y)^2)
-  local active = nil
-
-  -- 在中心空洞中不激活菜单
-  if distance > RING_SIZE / 2 - RING_THICKNESS then
-    local sliceDeg = 360 / #APPLICATIONS
-    local halfSliceDeg = sliceDeg / 2
-    local rad = math.atan2(mousePos.y - ringPos.y, mousePos.x - ringPos.x)
-    -- 弧度转角度，0 - 2π -> -180 - 180
-    local deg = math.deg(rad)
-    -- 由于第一个菜单在十二点钟方向，所以再次调整角度，并且转换成 0 - 360
-    deg = (deg + 90 + halfSliceDeg) % 360
-    active = math.floor(deg / sliceDeg) + 1
+  -- 预加载图标
+  for _, item in ipairs(self.items) do
+    item.image = hs.image.imageFromPath(item.icon)
   end
 
-  ring:setActive(active)
-end
--- 貌似也并没节省到性能，throttle 一下图心理安慰
-local throttledHandleMouseMoved = utils.throttle(handleMouseMoved, 1 / 60)
+  self.geo = Geometry.new({
+    ringSize = config.ringSize,
+    thickness = config.ringThickness,
+    iconSize = config.iconSize,
+    count = #self.items,
+  })
+  self.view = View.new(self.geo, config)
+  self.view:renderIcons(self.items)
 
--- 显示逻辑处理
-local function handleShowRing()
-  if ring:isShowing() then
-    if (TAB_TO_PICK) then
-      local active = ring:getActive()
-      ring:setActive(active == nil and 1 or (active % #APPLICATIONS) + 1)
+  return self
+end
+
+-- 鼠标移动 -> 命中检测 -> 高亮
+function Controller:onMouseMoved()
+  local mouse = hs.mouse.absolutePosition()
+  local index = self.geo:hitTest(mouse.x - self.center.x, mouse.y - self.center.y)
+  self.view:highlight(index)
+end
+
+-- tab 循环选择下一项
+function Controller:cycleNext()
+  local active = self.view:getActive()
+  local nextIndex = (active == nil) and 1 or (active % #self.items) + 1
+  self.view:highlight(nextIndex)
+end
+
+function Controller:showRing()
+  if self.view:isShowing() then
+    if self.tabToPick then
+      self:cycleNext()
     end
     return
   end
 
   local frame = hs.mouse.getCurrentScreen():fullFrame()
+  local half = self.geo.center
 
-  if FOLLOW_POINTER then
-    local mousePos = hs.mouse.absolutePosition()
-    ringPos = {
-      x = utils.clamp(mousePos.x, frame.x + RING_SIZE / 2, frame.x + frame.w - RING_SIZE / 2),
-      y = utils.clamp(mousePos.y, frame.y + RING_SIZE / 2, frame.y + frame.h - RING_SIZE / 2)
+  if self.followPointer then
+    local mouse = hs.mouse.absolutePosition()
+    self.center = {
+      x = utils.clamp(mouse.x, frame.x + half, frame.x + frame.w - half),
+      y = utils.clamp(mouse.y, frame.y + half, frame.y + frame.h - half),
     }
   else
-    ringPos = {
+    self.center = {
       x = (frame.x + frame.w) / 2,
-      y = (frame.y + frame.h) / 2
+      y = (frame.y + frame.h) / 2,
     }
   end
 
-  ring:setPosition(ringPos)
-  ring:show()
+  self.view:moveTo(self.center)
+  self.view:show()
 
-  -- 菜单显示后开始监听鼠标移动事件
-  ring_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, throttledHandleMouseMoved)
   ring_mouseEvtTap:start()
-
-  -- 初始化触发计算一次
-  handleMouseMoved()
+  -- 初始触发一次
+  self:onMouseMoved()
 end
 
--- 隐藏逻辑处理
-local function handleHideRing()
-  if not ring:isShowing() then
+function Controller:hideRing()
+  if not self.view:isShowing() then
     return
   end
 
-  ring:hide()
-  -- 菜单隐藏后移除监听鼠标移动事件
-  ring_mouseEvtTap:stop()
+  -- 必须在 hide 复位前取出当前选项
+  local index = self.view:getActive()
+  self.view:hide()
 
-  local active = ring:getActive()
+  if ring_mouseEvtTap then
+    ring_mouseEvtTap:stop()
+  end
 
-  if active then
-    hs.application.launchOrFocus(APPLICATIONS[ring:getActive()].name)
+  if index then
+    local app = self.items[index].name
+    local ok = pcall(hs.application.launchOrFocus, app)
+    if not ok then
+      hs.notify.new({ title = 'Ring', informativeText = '启动失败：' .. app }):send()
+    end
   end
 end
 
--- 处理按键事件
-local function handleKeyEvent(event)
+function Controller:onKey(event)
+  local types = hs.eventtap.event.types
   local keyCode = event:getKeyCode()
-  local type = event:getType()
+  local eventType = event:getType()
   local isAltDown = event:getFlags().alt
 
-  -- 按下了 alt + tab 后显示菜单
-  if
-    type == hs.eventtap.event.types.keyDown and
-    keyCode == hs.keycodes.map.tab and
-    isAltDown
-  then
-    handleShowRing()
-    -- 阻止事件传递
-    return true
+  -- alt + tab 显示菜单
+  if eventType == types.keyDown and keyCode == hs.keycodes.map.tab and isAltDown then
+    self:showRing()
+    return true -- 阻止事件传递
   end
 
-  -- 松开了 alt 后隐藏菜单
-  if
-    type == hs.eventtap.event.types.flagsChanged and
-    keyCode == hs.keycodes.map.alt and
-    not isAltDown
-  then
-    handleHideRing()
+  -- 松开 alt 隐藏菜单
+  if eventType == types.flagsChanged and keyCode == hs.keycodes.map.alt and not isAltDown then
+    self:hideRing()
   end
 
   return false
 end
 
--- 监听快捷键
-ring_keyEvtTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown, hs.eventtap.event.types.flagsChanged }, handleKeyEvent)
-ring_keyEvtTap:start()
+function Controller:enable()
+  -- 监听器用全局变量持有，避免被 GC
+
+  -- 鼠标移动：仅在菜单显示时 start/stop，这里只创建一次
+  ring_mouseEvtTap = hs.eventtap.new({ hs.eventtap.event.types.mouseMoved }, function()
+    self:onMouseMoved()
+    return false
+  end)
+
+  -- 快捷键：常驻监听
+  ring_keyEvtTap = hs.eventtap.new(
+    { hs.eventtap.event.types.keyDown, hs.eventtap.event.types.flagsChanged },
+    function(event)
+      return self:onKey(event)
+    end
+  )
+  ring_keyEvtTap:start()
+end
+
+-- --------------------------------------------------
+-- 启动
+-- --------------------------------------------------
+
+local controller = Controller.new(CONFIG)
+controller:enable()

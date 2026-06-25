@@ -1,118 +1,144 @@
 -- **************************************************
 -- 输入法指示器
 -- **************************************************
+-- 在每块屏幕顶部画一条彩色细条，指示当前输入法。
+-- 仅在切到指定输入法时创建画布，切走即销毁，空闲零占用。
+-- **************************************************
 
 -- --------------------------------------------------
--- 指示器高度
-local HEIGHT = 6
--- 指示器透明度
-local ALPHA = 1
--- 多个颜色之间线性渐变
-local ENABLE_COLOR_GRADIENT = false
--- 指示器颜色
-local IME_TO_COLORS = {
-  -- 微信输入法
-  ['com.tencent.inputmethod.wetype.pinyin'] = {
-    { hex = '#de2910' },
-    -- { hex = '#eab308' },
-    -- { hex = '#0ea5e9' }
-  }
+-- 配置
+-- --------------------------------------------------
+
+local CONFIG = {
+  height = 5,
+  width = 128,
+  align = 'right',  -- 水平对齐：'left' | 'center' | 'right'
+  alpha = 1,
+  gradient = false, -- 多色时线性渐变（否则等分分格）
+
+  -- 输入法 -> 颜色
+  colors = {
+    -- 微信输入法
+    ['com.tencent.inputmethod.wetype.pinyin'] = {
+      { hex = '#de2910' },
+      -- { hex = '#ffffff' },
+      -- { hex = '#0ea5e9' },
+    },
+  },
 }
+
+-- --------------------------------------------------
+-- 渲染
 -- --------------------------------------------------
 
 local canvases = {}
-local lastSourceID = nil
 
--- 绘制指示器
-local function draw(colors)
-  local screens = hs.screen.allScreens()
-
-  for i, screen in ipairs(screens) do
-    local frame = screen:fullFrame()
-    local canvasX = frame.x + frame.w - 128
-    local canvasY = frame.y
-    local canvasW = 128
-    local canvasH = HEIGHT
-
-    local canvas = hs.canvas.new({ x = canvasX, y = canvasY, w = canvasW, h = canvasH })
-    canvas:level(hs.canvas.windowLevels.overlay)
-    canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
-    canvas:alpha(ALPHA)
-
-    if ENABLE_COLOR_GRADIENT and #colors > 1 then
-      local rect = {
-        type = 'rectangle',
-        action = 'fill',
-        fillGradient = 'linear',
-        fillGradientColors = colors,
-        frame = { x = 0, y = 0, w = canvasW, h = canvasH }
-      }
-      canvas[1] = rect
-    else
-      local cellW = canvasW / #colors
-
-      for j, color in ipairs(colors) do
-        local startX = (j - 1) * cellW
-        local startY = 0
-        local rect = {
-          type = 'rectangle',
-          action = 'fill',
-          fillColor = color,
-          frame = { x = startX, y = startY, w = cellW, h = canvasH }
-        }
-        canvas[j] = rect
-      end
-    end
-
-    canvas:show()
-    canvases[i] = canvas
-  end
-end
-
--- 清除 canvas 上的内容
-local function clear()
+local function destroy()
   for _, canvas in ipairs(canvases) do
     canvas:delete()
   end
   canvases = {}
 end
 
--- 更新 canvas 显示
-local function update(sourceID)
-  clear()
+local function originX(frame)
+  if CONFIG.align == 'left' then
+    return frame.x
+  elseif CONFIG.align == 'center' then
+    return frame.x + (frame.w - CONFIG.width) / 2
+  end
+  return frame.x + frame.w - CONFIG.width
+end
 
-  local colors = IME_TO_COLORS[sourceID or hs.keycodes.currentSourceID()]
+-- 颜色列表 -> canvas 元素
+local function buildElements(colors)
+  if CONFIG.gradient and #colors > 1 then
+    return { {
+      type = 'rectangle',
+      action = 'fill',
+      fillGradient = 'linear',
+      fillGradientColors = colors,
+      frame = { x = 0, y = 0, w = CONFIG.width, h = CONFIG.height },
+    } }
+  end
 
-  if colors then
-    draw(colors)
+  local els = {}
+  local cellW = CONFIG.width / #colors
+
+  for i, color in ipairs(colors) do
+    els[i] = {
+      type = 'rectangle',
+      action = 'fill',
+      fillColor = color,
+      frame = { x = (i - 1) * cellW, y = 0, w = cellW, h = CONFIG.height },
+    }
+  end
+
+  return els
+end
+
+-- 按颜色在每块屏幕重画；colors 为 nil 则全部销毁
+local function render(colors)
+  destroy()
+
+  if not colors then
+    return
+  end
+
+  local els = buildElements(colors)
+
+  for _, screen in ipairs(hs.screen.allScreens()) do
+    local frame = screen:fullFrame()
+    local canvas = hs.canvas.new({
+      x = originX(frame),
+      y = frame.y,
+      w = CONFIG.width,
+      h = CONFIG.height,
+    })
+    canvas:level(hs.canvas.windowLevels.overlay)
+    canvas:behavior(hs.canvas.windowBehaviors.canJoinAllSpaces)
+    canvas:alpha(CONFIG.alpha)
+
+    for i, el in ipairs(els) do
+      canvas[i] = el
+    end
+
+    canvas:show()
+    table.insert(canvases, canvas)
   end
 end
 
-local function handleInputSourceChanged()
-  local currentSourceID = hs.keycodes.currentSourceID()
+-- --------------------------------------------------
+-- 监听
+-- --------------------------------------------------
 
-  if lastSourceID ~= currentSourceID then
-    update(currentSourceID)
-    lastSourceID = currentSourceID
+local lastSourceID = nil
+
+-- force 跳过「未变化」守卫，供屏幕变化 / 初始化使用
+local function update(force)
+  local sourceID = hs.keycodes.currentSourceID()
+  if not force and sourceID == lastSourceID then
+    return
   end
+  lastSourceID = sourceID
+  render(CONFIG.colors[sourceID])
 end
 
--- 输入法变化事件监听
--- 通过 hs.keycodes.inputSourceChanged 方式监听有时候不触发，直接监听系统事件可以解决，
--- 参考 https://github.com/Hammerspoon/hammerspoon/issues/1499）
+-- 以下监听器用全局变量持有，避免被 GC
+
+-- 输入法变化。hs.keycodes.inputSourceChanged 有时不触发，直接监听系统事件，
+-- 参考 https://github.com/Hammerspoon/hammerspoon/issues/1499
 imi_dn = hs.distributednotifications.new(
-  handleInputSourceChanged,
-  -- or 'AppleSelectedInputSourcesChangedNotification'
+  function() update() end,
   'com.apple.Carbon.TISNotifySelectedKeyboardInputSourceChanged'
 )
--- 每秒同步一次，避免由于错过事件监听导致状态不同步
-imi_indicatorSyncTimer = hs.timer.new(1, handleInputSourceChanged)
--- 屏幕变化时候重新渲染
-imi_screenWatcher = hs.screen.watcher.new(update)
+-- 每秒兜底同步，避免漏事件导致状态不同步
+imi_syncTimer = hs.timer.new(1, function() update() end)
+-- 屏幕变化时按新几何重画
+imi_screenWatcher = hs.screen.watcher.new(function() update(true) end)
 
 imi_dn:start()
-imi_indicatorSyncTimer:start()
+imi_syncTimer:start()
 imi_screenWatcher:start()
 
--- 初始执行一次
-update()
+-- 初始渲染
+update(true)
