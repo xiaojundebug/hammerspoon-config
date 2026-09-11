@@ -11,8 +11,8 @@
 -- Controller —— 状态机 + 事件监听，串起 Geometry 与 View
 -- **************************************************
 
-local utils = require('./utils')
-local tween = require('./tween')
+local utils = require('utils')
+local tween = require('tween')
 
 -- --------------------------------------------------
 -- 配置（唯一来源）
@@ -44,7 +44,7 @@ local CONFIG = {
   activeColor = { hex = '#FF7A45' }, -- 选中扇区
 
   -- 选中图标放大倍数（设为 1 可关闭）
-  iconActiveScale = 1.15,
+  iconActiveScale = 1,
 
   -- 中心标签
   showLabel = true,

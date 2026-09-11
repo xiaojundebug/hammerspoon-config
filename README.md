@@ -11,7 +11,6 @@ hammerspoon 是一个 macOS 上的自动化工具，它允许你通过 lua 脚�
 - [defeating_paste_blocking.lua](./modules/defeating_paste_blocking.lua) - 有些网站禁止粘贴，该脚本可以模拟系统输入事件绕过限制
 - [ring.lua](./modules/ring.lua) - 环形 App 启动器
 - [magspeed_smooth_scrolling_fix.lua](./modules/magspeed_smooth_scrolling_fix.lua) - 罗技无极滚轮鼠标回滚问题优化
-- [arrow_keys_remapping.lua](./modules/arrow_keys_remapping.lua) - 将 W / A / S / D 映射为方向键，右手无需频繁移动到右下角按方向键
 
 ## 怎么使用
 
