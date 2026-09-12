@@ -6,7 +6,8 @@ local utils = require('./utils')
 
 -- --------------------------------------------------
 -- 微信输入法
-local Pinyin = 'com.tencent.inputmethod.wetype.pinyin'
+-- local Pinyin = 'com.tencent.inputmethod.wetype.pinyin'
+local Pinyin = 'com.bytedance.inputmethod.doubaoime.pinyin'
 local ABC = 'com.apple.keylayout.ABC'
 
 -- 定义你自己想要自动切换输入法的 app

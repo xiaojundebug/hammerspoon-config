@@ -18,8 +18,9 @@ local CONFIG = {
 
   -- 输入法 -> 颜色
   colors = {
-    -- 微信输入法
-    ['com.tencent.inputmethod.wetype.pinyin'] = {
+    -- 微信输入法 com.tencent.inputmethod.wetype.pinyin
+    -- 豆包输入法 com.bytedance.inputmethod.doubaoime.pinyin
+    ['com.bytedance.inputmethod.doubaoime.pinyin'] = {
       { hex = '#de2910' },
       -- { hex = '#ffffff' },
       -- { hex = '#0ea5e9' },
